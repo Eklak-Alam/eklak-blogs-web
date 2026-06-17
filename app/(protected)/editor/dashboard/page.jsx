@@ -6,10 +6,10 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useDropzone } from "react-dropzone";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, ImagePlus, ArrowLeft, Send, Save, 
-  Bold, Italic, Heading2, Heading3, Quote, List, ListOrdered, Camera 
+  Bold, Italic, Heading2, Heading3, Quote, List, ListOrdered, Camera, X 
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -23,6 +23,14 @@ import { useCreatePostMutation, useUpdateMyPostMutation } from "@/hooks/mutation
 import { useGetPostBySlugQuery } from "@/hooks/queries/usePostQueries";
 import { useGetCategoriesQuery, useGetTagsQuery } from "@/hooks/queries/useCategoryQueries";
 import { useAuthStore } from "@/store/useAuthStore";
+
+// Cinematic easing curve
+const cinematicEase = [0.16, 1, 0.3, 1];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 1.2, ease: cinematicEase } }
+};
 
 // ==========================================
 // 1. ZOD VALIDATION SCHEMA
@@ -47,12 +55,11 @@ const TipTapEditor = ({ content, onChange }) => {
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-lg dark:prose-invert max-w-none focus:outline-none min-h-[500px] text-[var(--color-foreground)] leading-relaxed',
+        class: 'prose prose-lg dark:prose-invert max-w-none focus:outline-none min-h-[60vh] text-[var(--color-foreground)] leading-relaxed prose-headings:font-normal prose-p:font-light prose-strong:font-medium',
       },
     },
   });
 
-  // Keep editor content in sync if the initial content loads asynchronously
   useEffect(() => {
     if (editor && content && editor.getHTML() !== content) {
       editor.commands.setContent(content);
@@ -62,19 +69,25 @@ const TipTapEditor = ({ content, onChange }) => {
   if (!editor) return null;
 
   return (
-    <div className="w-full flex flex-col gap-4 relative">
-      <div className="flex flex-wrap items-center gap-1 p-1.5 bg-[var(--color-surface)]/80 backdrop-blur-md border border-[var(--color-border)] rounded-2xl shadow-sm transition-all sticky top-24 z-40 w-fit">
-        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={`p-2.5 rounded-xl transition-all ${editor.isActive('bold') ? 'bg-[var(--color-foreground)] text-[var(--color-background)] shadow-md' : 'text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-foreground)]'}`}><Bold className="w-4 h-4" /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={`p-2.5 rounded-xl transition-all ${editor.isActive('italic') ? 'bg-[var(--color-foreground)] text-[var(--color-background)] shadow-md' : 'text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-foreground)]'}`}><Italic className="w-4 h-4" /></button>
-        <div className="w-px h-6 bg-[var(--color-border)] mx-1" />
-        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={`p-2.5 rounded-xl transition-all ${editor.isActive('heading', { level: 2 }) ? 'bg-[var(--color-foreground)] text-[var(--color-background)] shadow-md' : 'text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-foreground)]'}`}><Heading2 className="w-4 h-4" /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={`p-2.5 rounded-xl transition-all ${editor.isActive('heading', { level: 3 }) ? 'bg-[var(--color-foreground)] text-[var(--color-background)] shadow-md' : 'text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-foreground)]'}`}><Heading3 className="w-4 h-4" /></button>
-        <div className="w-px h-6 bg-[var(--color-border)] mx-1" />
-        <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={`p-2.5 rounded-xl transition-all ${editor.isActive('blockquote') ? 'bg-[var(--color-foreground)] text-[var(--color-background)] shadow-md' : 'text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-foreground)]'}`}><Quote className="w-4 h-4" /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={`p-2.5 rounded-xl transition-all ${editor.isActive('bulletList') ? 'bg-[var(--color-foreground)] text-[var(--color-background)] shadow-md' : 'text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-foreground)]'}`}><List className="w-4 h-4" /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={`p-2.5 rounded-xl transition-all ${editor.isActive('orderedList') ? 'bg-[var(--color-foreground)] text-[var(--color-background)] shadow-md' : 'text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-foreground)]'}`}><ListOrdered className="w-4 h-4" /></button>
+    <div className="w-full flex flex-col relative group">
+      {/* 
+        Sleek, Naked Formatting Toolbar (NO STICKY BEHAVIOR)
+        Naturally flows with the document structure.
+      */}
+      <div className="flex items-center gap-1.5 py-3 border-y border-[var(--color-border)]/30 mb-8 opacity-50 group-focus-within:opacity-100 hover:opacity-100 transition-opacity duration-700">
+        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('bold') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Bold className="w-4 h-4" strokeWidth={1.5} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('italic') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Italic className="w-4 h-4" strokeWidth={1.5} /></button>
+        <div className="w-px h-4 bg-[var(--color-border)]/50 mx-2" />
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('heading', { level: 2 }) ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Heading2 className="w-4 h-4" strokeWidth={1.5} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('heading', { level: 3 }) ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Heading3 className="w-4 h-4" strokeWidth={1.5} /></button>
+        <div className="w-px h-4 bg-[var(--color-border)]/50 mx-2" />
+        <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('blockquote') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Quote className="w-4 h-4" strokeWidth={1.5} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('bulletList') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><List className="w-4 h-4" strokeWidth={1.5} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('orderedList') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><ListOrdered className="w-4 h-4" strokeWidth={1.5} /></button>
       </div>
-      <div className="p-6 md:p-12 bg-transparent transition-colors">
+      
+      {/* Editor Canvas */}
+      <div className="bg-transparent transition-colors">
         <EditorContent editor={editor} />
       </div>
     </div>
@@ -82,7 +95,7 @@ const TipTapEditor = ({ content, onChange }) => {
 };
 
 // ==========================================
-// 3. EDITOR FORM CONTENT
+// 3. MAIN EDITOR INTERFACE
 // ==========================================
 function EditorFormContent() {
   const router = useRouter();
@@ -98,7 +111,6 @@ function EditorFormContent() {
 
   const isPending = isCreating || isUpdating;
 
-  // Fetch Existing Post
   const { data: postResponse, isLoading: postLoading } = useGetPostBySlugQuery(editSlug);
   const existingPost = postResponse?.data?.post || postResponse?.post || null;
 
@@ -115,13 +127,13 @@ function EditorFormContent() {
     if (isInitialized) {
       if (!isAuthenticated) router.push("/login");
       else if (user?.role === "USER") {
-        toast.error("Writers workspace is restricted.");
+        toast.error("Access denied. Unauthorized entity.");
         router.push("/dashboard");
       }
     }
   }, [isInitialized, isAuthenticated, user, router]);
 
-  // Pre-fill form if editing
+  // Pre-fill form
   useEffect(() => {
     if (existingPost) {
       reset({
@@ -131,19 +143,17 @@ function EditorFormContent() {
         categoryId: existingPost.category?.id || existingPost.categoryId || ""
       });
       setCoverImageBase64(existingPost.coverImage || null);
-      if (existingPost.tags) {
-        setSelectedTags(existingPost.tags.map(t => t.id));
-      }
+      if (existingPost.tags) setSelectedTags(existingPost.tags.map(t => t.id));
       
       // Ownership Guard
       if (existingPost.authorId !== user?.id && user?.role !== 'ADMIN' && user?.role !== 'AUTHOR') {
-        toast.error("You do not have permission to edit this post.");
+        toast.error("Permission denied. You cannot modify this record.");
         router.push("/writer/dashboard");
       }
     }
   }, [existingPost, reset, user, router]);
 
-  // Dropzone setup
+  // Image Dropzone
   const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     if (file) {
@@ -154,7 +164,7 @@ function EditorFormContent() {
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop, accept: { 'image/jpeg': [], 'image/png': [], 'image/webp': [] }, maxFiles: 1,
+    onDrop, accept: { 'image/*': [] }, maxFiles: 1,
   });
 
   const toggleTag = (tagId) => {
@@ -162,24 +172,19 @@ function EditorFormContent() {
   };
 
   const onSubmit = (status) => (data) => {
-    const payload = {
-      ...data,
-      status: status,
-      coverImage: coverImageBase64,
-      tags: selectedTags 
-    };
+    const payload = { ...data, status: status, coverImage: coverImageBase64, tags: selectedTags };
 
     if (existingPost) {
       updatePost({ id: existingPost.id, payload }, {
         onSuccess: () => {
-          toast.success(`Post updated successfully!`);
+          toast.success(`Record updated successfully.`);
           router.push('/writer/dashboard');
         }
       });
     } else {
       createPost(payload, {
         onSuccess: () => {
-          toast.success(`Post ${status === "PUBLISHED" ? "published" : "saved"} successfully!`);
+          toast.success(`Record ${status === "PUBLISHED" ? "published" : "saved"} successfully.`);
           router.push('/writer/dashboard');
         }
       });
@@ -190,11 +195,12 @@ function EditorFormContent() {
   const tags = tagResponse?.data?.tags || tagResponse?.tags || tagResponse?.data || [];
 
   if (!isInitialized || (editSlug && postLoading)) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--color-brand-primary)]" /></div>;
+    return <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} /></div>;
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] relative selection:bg-[var(--color-brand-primary)]/30">
+    // pt-32 ensures this entire layout sits cleanly under your custom global navbar
+    <div className="min-h-screen bg-[var(--color-background)] relative selection:bg-[var(--color-brand-primary)]/30 pt-32 pb-24">
       
       {/* Minimal Background Stylings */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden h-[30vh]">
@@ -209,105 +215,109 @@ function EditorFormContent() {
         />
       </div>
 
-      {/* Editor Top Navbar */}
-      <nav className="sticky top-0 z-50 bg-[var(--color-background)]/80 backdrop-blur-xl border-b border-[var(--color-border)]/50 px-4 md:px-8 py-4 flex justify-between items-center shadow-sm">
-        <div className="flex items-center gap-4">
-          <Link href="/writer/dashboard" className="p-2.5 bg-[var(--color-surface)] hover:bg-[var(--color-border)] rounded-full transition-colors text-[var(--color-foreground)] shadow-sm">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <span className="hidden md:inline text-xs font-extrabold tracking-widest text-[var(--color-muted)] uppercase">
-            {existingPost ? "Edit Mode" : "Draft Mode"}
-          </span>
-        </div>
+      {/* ======================================= */}
+      {/* MAIN WORKSPACE GRID                       */}
+      {/* ======================================= */}
+      <div className="relative z-10 max-w-[1300px] mx-auto px-6 py-4 md:py-8">
         
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleSubmit(onSubmit("DRAFT"))}
-            disabled={isPending}
-            className="px-6 py-2.5 rounded-full text-sm font-bold text-[var(--color-foreground)] bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-brand-primary)] transition-all flex items-center gap-2 shadow-sm"
-          >
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-[var(--color-brand-primary)]" />}
-            Save Draft
-          </button>
-          
-          <button 
-            onClick={handleSubmit(onSubmit("PUBLISHED"))}
-            disabled={isPending || user?.role === 'WRITER'}
-            className="px-8 py-2.5 rounded-full text-sm font-bold text-[var(--color-background)] bg-[var(--color-foreground)] hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-[var(--color-foreground)]/20 flex items-center gap-2 disabled:opacity-50"
-            title={user?.role === 'WRITER' ? "Writers cannot publish directly. Save as draft for Admin approval." : ""}
-          >
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin text-[var(--color-background)]" /> : <Send className="w-4 h-4" />}
-            {user?.role === 'WRITER' ? 'Publish Blocked' : 'Publish'}
-          </button>
-        </div>
-      </nav>
+        {/* Top Minimal Info Bar (Natural Flow, Not Sticky) */}
+        <motion.div 
+          initial="hidden" animate="visible" variants={fadeUp}
+          className="flex items-center justify-between border-b border-[var(--color-border)]/40 pb-6 mb-16"
+        >
+          <Link href="/writer/dashboard" className="group flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors duration-500 outline-none">
+            <ArrowLeft className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:-translate-x-1 transition-all duration-500" strokeWidth={1.5} />
+            Return to Hub
+          </Link>
+          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--color-brand-primary)]">
+            [{existingPost ? "Edit Module" : "Initialization Module"}]
+          </span>
+        </motion.div>
 
-      {/* Main Workspace */}
-      <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-8 py-8 md:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
           
-          {/* LEFT: THE WRITING CANVAS */}
+          {/* ======================================= */}
+          {/* LEFT: THE WRITING CANVAS                  */}
+          {/* ======================================= */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="lg:col-span-8 space-y-12"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: cinematicEase }}
+            className="lg:col-span-8 flex flex-col"
           >
-            
-            {/* Title Input */}
-            <div>
+            {/* Title Input: Architectural Separator */}
+            <div className="mb-4 pb-8 border-b border-[var(--color-border)]/20">
               <input 
                 type="text" 
-                placeholder="Story Title..."
+                placeholder="Architectural Title."
                 {...register("title")}
-                className="w-full text-5xl md:text-6xl font-extrabold bg-transparent border-none outline-none text-[var(--color-foreground)] placeholder-[var(--color-border)] tracking-tight transition-all"
+                className="w-full text-4xl md:text-5xl lg:text-[4rem] font-normal bg-transparent border-none outline-none text-[var(--color-foreground)] placeholder-[var(--color-muted)]/30 tracking-tight leading-[1.05]"
               />
-              {errors.title && <p className="text-red-500 text-sm mt-3 font-medium bg-red-500/10 inline-block px-3 py-1 rounded-md">{errors.title.message}</p>}
+              <AnimatePresence>
+                {errors.title && (
+                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-[11px] mt-4 font-medium uppercase tracking-widest">{errors.title.message}</motion.p>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* TipTap Rich Text Editor */}
-            <div className="min-h-[500px]">
+            <div className="flex-1 w-full relative">
               <Controller
-                name="content"
-                control={control}
+                name="content" control={control}
                 render={({ field }) => (
                   <TipTapEditor content={field.value} onChange={field.onChange} />
                 )}
               />
-              {errors.content && <p className="text-red-500 text-sm mt-3 font-medium bg-red-500/10 inline-block px-3 py-1 rounded-md">{errors.content.message}</p>}
+              <AnimatePresence>
+                {errors.content && (
+                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-[11px] mt-4 font-medium uppercase tracking-widest">{errors.content.message}</motion.p>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
 
-          {/* RIGHT: SETTINGS PANEL */}
+          {/* ======================================= */}
+          {/* RIGHT: THE META SETTINGS PANEL            */}
+          {/* ======================================= */}
           <motion.div 
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1.2, ease: cinematicEase, delay: 0.2 }}
             className="lg:col-span-4"
           >
-            <div className="p-6 md:p-8 rounded-3xl bg-[var(--color-surface)]/60 backdrop-blur-xl border border-[var(--color-border)]/50 shadow-2xl lg:sticky lg:top-32 space-y-8">
-              <h3 className="text-xl font-bold text-[var(--color-foreground)] flex items-center gap-2">
-                Post Meta <span className="w-2 h-2 rounded-full bg-[var(--color-brand-accent)] animate-pulse"></span>
-              </h3>
+            {/* Natural flow, NOT STICKY */}
+            <div className="space-y-12 pb-12">
+              
+              <div className="border-b border-[var(--color-border)]/40 pb-4 mb-8">
+                <h3 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)] flex items-center justify-between">
+                  Parameters
+                  <span className="w-1.5 h-1.5 rounded-none bg-[var(--color-brand-accent)] animate-pulse"></span>
+                </h3>
+              </div>
 
-              {/* 1. Cover Image Upload (R2 Integration) */}
+              {/* 1. Cover Image Upload */}
               <div>
-                <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-widest mb-3 block">Cover Image</label>
+                <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-4 block">Visual Asset</label>
                 <div 
                   {...getRootProps()} 
-                  className={`relative border-2 border-dashed rounded-2xl text-center cursor-pointer transition-all duration-300 overflow-hidden group ${isDragActive ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/5' : 'border-[var(--color-border)] hover:border-[var(--color-brand-primary)]/50 bg-[var(--color-background)]'} ${coverImageBase64 ? 'border-transparent p-0 aspect-video' : 'p-8'}`}
+                  className={`relative border rounded-none text-center cursor-pointer transition-colors duration-700 overflow-hidden group ${isDragActive ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/5' : 'border-[var(--color-border)]/50 hover:border-[var(--color-foreground)]/30 bg-transparent'} ${coverImageBase64 ? 'border-transparent p-0 aspect-[4/3]' : 'p-10'}`}
                 >
                   <input {...getInputProps()} />
                   {coverImageBase64 ? (
                     <div className="w-full h-full relative">
-                      <img src={coverImageBase64} alt="Cover Preview" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                        <span className="text-white font-bold text-sm bg-white/20 px-4 py-2 rounded-full flex items-center gap-2"><Camera className="w-4 h-4" /> Change Image</span>
+                      <img src={coverImageBase64} alt="Preview" className="w-full h-full object-cover filter grayscale-[20%]" />
+                      <div className="absolute inset-0 bg-[var(--color-background)]/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
+                        <span className="text-[10px] font-medium text-[var(--color-foreground)] uppercase tracking-widest flex items-center gap-2"><Camera className="w-3.5 h-3.5" strokeWidth={1.5} /> Modify Asset</span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setCoverImageBase64(null); }}
+                          className="text-[10px] font-medium text-red-400 uppercase tracking-widest hover:underline flex items-center gap-1.5 outline-none"
+                        >
+                          <X className="w-3.5 h-3.5" strokeWidth={1.5} /> Purge
+                        </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-[var(--color-muted)] transition-colors">
-                      <div className="w-12 h-12 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center mb-3">
-                        <ImagePlus className="w-5 h-5 text-[var(--color-foreground)]" />
-                      </div>
-                      <p className="text-sm font-bold text-[var(--color-foreground)] mb-1">Click to upload cover</p>
-                      <p className="text-xs font-medium">SVG, PNG, JPG or WEBP</p>
+                    <div className="flex flex-col items-center justify-center text-[var(--color-muted)]">
+                      <ImagePlus className="w-6 h-6 mb-4 opacity-50" strokeWidth={1.5} />
+                      <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-foreground)] mb-2">Drop Asset Here</p>
+                      <p className="text-[9px] font-mono tracking-widest uppercase opacity-50">PNG, JPG, WEBP (Max 5MB)</p>
                     </div>
                   )}
                 </div>
@@ -315,35 +325,40 @@ function EditorFormContent() {
 
               {/* 2. Excerpt */}
               <div>
-                <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-widest mb-3 block">Excerpt / Summary</label>
+                <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-4 block">Summary Directive</label>
                 <textarea 
                   {...register("excerpt")} rows="4"
-                  className="w-full bg-[var(--color-background)] border border-[var(--color-border)] rounded-2xl px-4 py-3 text-sm font-medium text-[var(--color-foreground)] outline-none focus:border-[var(--color-brand-primary)] transition-all resize-none placeholder-[var(--color-muted)]"
-                  placeholder="Write a brief, catchy summary for the public feed..."
+                  className="w-full bg-transparent border border-[var(--color-border)]/50 rounded-none px-4 py-4 text-[13px] font-light text-[var(--color-foreground)] outline-none focus:border-[var(--color-brand-accent)] transition-colors duration-700 resize-none placeholder-[var(--color-muted)]/50"
+                  placeholder="Define a brief summary for the index..."
                 />
-                {errors.excerpt && <p className="text-red-500 text-xs mt-2 font-medium">{errors.excerpt.message}</p>}
+                <AnimatePresence>
+                  {errors.excerpt && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-[10px] mt-2 font-medium uppercase tracking-widest">{errors.excerpt.message}</motion.p>}
+                </AnimatePresence>
               </div>
 
-              {/* 3. Category Dropdown */}
+              {/* 3. Category */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-widest block">Category</label>
-                  {catsLoading && <Loader2 className="w-3 h-3 animate-spin text-[var(--color-brand-accent)]" />}
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] block">Primary Module</label>
+                  {catsLoading && <Loader2 className="w-3 h-3 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} />}
                 </div>
-                <select 
-                  {...register("categoryId")}
-                  className="w-full bg-[var(--color-background)] border border-[var(--color-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--color-foreground)] outline-none focus:border-[var(--color-brand-primary)] transition-all cursor-pointer"
-                >
-                  <option value="">Select a category...</option>
-                  {categories?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                </select>
+                <div className="relative">
+                  <select 
+                    {...register("categoryId")}
+                    className="w-full appearance-none bg-transparent border border-[var(--color-border)]/50 rounded-none px-4 py-3.5 text-[13px] font-light text-[var(--color-foreground)] outline-none focus:border-[var(--color-brand-accent)] transition-colors duration-700 cursor-pointer"
+                  >
+                    <option value="" className="text-[var(--color-background)]">Select module assignment...</option>
+                    {categories?.map(cat => <option key={cat.id} value={cat.id} className="text-[var(--color-background)]">{cat.name}</option>)}
+                  </select>
+                  <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--color-muted)] pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
               </div>
 
-              {/* 4. Tags Multi-Select */}
+              {/* 4. Tags */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-widest block">Tags</label>
-                  {tagsLoading && <Loader2 className="w-3 h-3 animate-spin text-[var(--color-brand-accent)]" />}
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] block">Index Tags</label>
+                  {tagsLoading && <Loader2 className="w-3 h-3 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} />}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {tags?.map(tag => {
@@ -351,14 +366,47 @@ function EditorFormContent() {
                     return (
                       <button
                         key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
-                        className={`px-4 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
-                          isSelected ? 'bg-[var(--color-foreground)] border-[var(--color-foreground)] text-[var(--color-background)] shadow-md' : 'bg-[var(--color-background)] border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-foreground)] hover:text-[var(--color-foreground)]'
+                        className={`px-3 py-1.5 rounded-none text-[10px] font-medium uppercase tracking-[0.1em] border transition-colors duration-500 cursor-pointer outline-none ${
+                          isSelected 
+                            ? 'bg-[var(--color-foreground)] border-[var(--color-foreground)] text-[var(--color-background)]' 
+                            : 'bg-transparent border-[var(--color-border)]/50 text-[var(--color-muted)] hover:border-[var(--color-foreground)]/40 hover:text-[var(--color-foreground)]'
                         }`}
                       >
                         {tag.name}
                       </button>
                     )
                   })}
+                </div>
+              </div>
+
+              {/* ======================================= */}
+              {/* ACTION / PUBLISHING MODULE (Rounded)      */}
+              {/* ======================================= */}
+              <div className="pt-12 mt-12 border-t border-[var(--color-border)]/40">
+                <h3 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)] mb-6">
+                  Execution Protocol
+                </h3>
+                <div className="flex flex-col gap-4">
+                  
+                  <button 
+                    onClick={handleSubmit(onSubmit("PUBLISHED"))}
+                    disabled={isPending || user?.role === 'WRITER'}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-[var(--color-foreground)] text-[var(--color-background)] rounded-full text-[12px] font-medium uppercase tracking-[0.15em] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-30 outline-none"
+                    title={user?.role === 'WRITER' ? "Authorization restricted. Save as draft." : ""}
+                  >
+                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : <Send className="w-4 h-4" strokeWidth={1.5} />}
+                    {user?.role === 'WRITER' ? 'Restricted' : 'Publish Protocol'}
+                  </button>
+                  
+                  <button 
+                    onClick={handleSubmit(onSubmit("DRAFT"))}
+                    disabled={isPending}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-transparent text-[var(--color-foreground)] border border-[var(--color-border)]/50 rounded-full text-[12px] font-medium uppercase tracking-[0.15em] hover:border-[var(--color-foreground)] active:scale-[0.98] transition-all disabled:opacity-30 outline-none"
+                  >
+                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : <Save className="w-4 h-4 opacity-50" strokeWidth={1.5} />}
+                    Save as Draft
+                  </button>
+
                 </div>
               </div>
 
@@ -373,7 +421,7 @@ function EditorFormContent() {
 
 export default function EditorPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--color-brand-primary)]" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} /></div>}>
       <EditorFormContent />
     </Suspense>
   );

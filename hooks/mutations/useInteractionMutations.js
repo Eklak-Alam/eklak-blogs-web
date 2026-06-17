@@ -13,9 +13,9 @@ export const useToggleLikeMutation = () => {
   return useMutation({
     mutationFn: (params) => interactionApi.toggleLike(params),
     onSuccess: (response, variables) => {
-      // response.data.isLiked tells you if they liked or unliked it
-      // We invalidate the posts query so the like counter updates instantly!
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
+      // Only invalidate post LISTS, NOT the post detail.
+      // Invalidating the detail re-triggers getPostBySlug which increments viewCount!
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to toggle like');
@@ -31,7 +31,8 @@ export const useToggleBookmarkMutation = () => {
     onSuccess: () => {
       // Invalidate the user's "Me" query to update their saved bookmarks list
       queryClient.invalidateQueries({ queryKey: queryKeys.users.me() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
+      // Only invalidate post LISTS, not the detail (avoids view count re-increment)
+      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to update bookmarks');
