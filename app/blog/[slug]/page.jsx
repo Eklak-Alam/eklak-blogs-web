@@ -7,21 +7,23 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { 
   ArrowLeft, Clock, Eye, Heart, Bookmark, MessageSquare, 
-  Share2, Loader2, ArrowRight, CornerDownRight, Edit2, Trash2, X 
+  Share2, Loader2, X, Copy 
 } from "lucide-react";
+// Using official brand icons from react-icons
+import { FaXTwitter, FaLinkedinIn } from "react-icons/fa6";
 
 import { useGetPostBySlugQuery, useGetPublishedPostsQuery } from "@/hooks/queries/usePostQueries";
-import { useGetCommentsQuery } from "@/hooks/queries/useInteractionQueries";
+import { useGetCommentsQuery, useGetMyInteractionsQuery } from "@/hooks/queries/useInteractionQueries";
 import { useToggleLikeMutation, useToggleBookmarkMutation, useAddCommentMutation, useUpdateCommentMutation, useDeleteCommentMutation } from "@/hooks/mutations/useInteractionMutations";
 import { useIncrementShareCountMutation } from "@/hooks/mutations/usePostMutations";
 import { useAuthStore } from "@/store/useAuthStore";
 
-// Cinematic easing curve
-const cinematicEase = [0.16, 1, 0.3, 1];
+// Smooth editorial easing curve
+const smoothEase = [0.25, 1, 0.5, 1];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 1.2, ease: cinematicEase } }
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: smoothEase } }
 };
 
 export default function PostReadingPage() {
@@ -60,7 +62,8 @@ export default function PostReadingPage() {
   const { mutate: deleteComment } = useDeleteCommentMutation();
   const { mutate: incrementShare } = useIncrementShareCountMutation();
 
-  // Optimistic like/bookmark state
+  const { data: myInteractions } = useGetMyInteractionsQuery(isAuthenticated ? post?.id : null);
+
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -69,11 +72,23 @@ export default function PostReadingPage() {
     if (post?.likeCount !== undefined) setLikeCount(post.likeCount);
   }, [post?.likeCount]);
 
-  // Auth Gate
+  useEffect(() => {
+    if (myInteractions?.data) {
+      setIsLiked(myInteractions.data.isLiked);
+      setIsBookmarked(myInteractions.data.isBookmarked);
+    }
+  }, [myInteractions]);
+
   const requireAuth = (actionCallback) => {
     if (!isAuthenticated) {
-      toast.error("Authentication required for this action.");
-      router.push("/login");
+      const callbackUrl = encodeURIComponent(`/blog/${slug}`);
+      toast("Sign in required", {
+        description: "Please sign in to interact with this post.",
+        action: {
+          label: "Sign In",
+          onClick: () => router.push(`/login?callbackUrl=${callbackUrl}`),
+        },
+      });
       return;
     }
     actionCallback();
@@ -87,7 +102,6 @@ export default function PostReadingPage() {
       onError: () => {
         setIsLiked(!nowLiked);
         setLikeCount(prev => nowLiked ? prev - 1 : prev + 1);
-        toast.error("Failed to sync status.");
       }
     });
   });
@@ -95,19 +109,12 @@ export default function PostReadingPage() {
   const handleBookmark = () => requireAuth(() => {
     const nowBookmarked = !isBookmarked;
     setIsBookmarked(nowBookmarked);
-    toggleBookmark({ postId: post.id }, {
-      onSuccess: () => toast.success(nowBookmarked ? "Saved to archive." : "Removed from archive."),
-      onError: () => {
-        setIsBookmarked(!nowBookmarked);
-        toast.error("Failed to sync status.");
-      }
-    });
+    toggleBookmark({ postId: post.id });
   });
   
   const handleCommentSubmit = (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-    
     requireAuth(() => {
       addComment({ postId: post.id, payload: { content: commentText } }, {
         onSuccess: () => {
@@ -129,7 +136,7 @@ export default function PostReadingPage() {
   };
 
   const handleDeleteComment = (commentId) => {
-    if (confirm("Confirm deletion of this record?")) {
+    if (confirm("Are you sure you want to delete this comment?")) {
       deleteComment({ id: commentId, postId: post.id });
     }
   };
@@ -142,384 +149,327 @@ export default function PostReadingPage() {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
-    toast.success("Link copied to clipboard");
+    toast.success("Link copied!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const formatDate = (dateString) => {
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return new Date(dateString).toLocaleDateString('en-US', options).toUpperCase();
+  };
+
+  const calculateReadTime = (text) => {
+    if (!text) return 5;
+    const wordCount = text.replace(/<[^>]*>?/gm, '').split(/\s+/).length;
+    return Math.max(1, Math.ceil(wordCount / 200));
   };
 
   if (postLoading) {
     return (
-      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-slate-400" strokeWidth={1.5} />
       </div>
     );
   }
 
-  if (postError || !post) {
-    return (
-      <div className="min-h-screen bg-[var(--color-background)] flex flex-col items-center justify-center text-center p-6">
-        <h1 className="text-3xl font-normal text-[var(--color-foreground)] mb-4">Record Not Found</h1>
-        <p className="text-[14px] font-light text-[var(--color-muted)] mb-8">The requested transmission does not exist in the archive.</p>
-        <Link href="/blog" className="text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--color-brand-accent)] hover:underline">
-          Return to Index
-        </Link>
-      </div>
-    );
-  }
+  if (postError || !post) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] relative selection:bg-[var(--color-brand-primary)]/30 pb-32">
+    <div className="min-h-screen bg-white text-slate-900 relative selection:bg-blue-500/30 font-sans">
       
-      {/* Ultra-thin Reading Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-[2px] bg-transparent z-50">
-        <div className="h-full bg-[var(--color-brand-accent)] w-1/3" />
-      </div>
-
       {/* ======================================== */}
-      {/* 1. EDITORIAL HEADER                      */}
+      {/* 1. EDITORIAL HEADER & HERO               */}
       {/* ======================================== */}
-      <div className="pt-32 pb-16 max-w-[1000px] mx-auto px-6">
+      <div className="pt-36 max-w-5xl mx-auto px-6 text-center">
         
-        {/* Navigation & Category */}
-        <motion.div 
-          initial="hidden" animate="visible" variants={fadeUp}
-          className="flex items-center justify-between border-b border-[var(--color-border)]/40 pb-6 mb-12"
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="mb-8">
+          <span className="font-mono text-[11px] md:text-xs font-medium tracking-[0.15em] text-zinc-500 uppercase">
+            {formatDate(post.createdAt)} &nbsp;&bull;&nbsp; {calculateReadTime(post.content)} MINUTE READ
+          </span>
+        </motion.div>
+
+        <motion.h1 
+          initial="hidden" animate="visible" variants={fadeUp} 
+          className="text-5xl md:text-6xl lg:text-[4.5rem] font-medium  leading-[1.05] text-zinc-900 mb-16"
         >
-          <button onClick={() => router.back()} className="group flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors duration-500 outline-none">
-            <ArrowLeft className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />
-            Back
-          </button>
-          {post.category && (
-            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-brand-primary)]">
-              {post.category.name}
-            </span>
-          )}
-        </motion.div>
-
-        {/* Title & Meta */}
-        <motion.div initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }} className="text-center flex flex-col items-center">
-          <motion.h1 variants={fadeUp} className="text-4xl md:text-6xl lg:text-[4.5rem] font-normal tracking-tight text-[var(--color-foreground)] leading-[1.05] mb-10">
-            {post.title}
-          </motion.h1>
-
-          <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-center gap-6 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-muted)]">
-            <div className="flex items-center gap-3">
-              {post.author?.image ? (
-                <img src={post.author.image} alt="" className="w-6 h-6 rounded-none object-cover grayscale" />
-              ) : (
-                <div className="w-6 h-6 rounded-none bg-[var(--color-border)]/30 flex items-center justify-center text-[var(--color-foreground)]">
-                  {post.author?.name?.charAt(0).toUpperCase() || '?'}
-                </div>
-              )}
-              <span className="text-[var(--color-foreground)]">{post.author?.name || 'System'}</span>
-            </div>
-            <span className="w-1 h-1 rounded-none bg-[var(--color-border)]" />
-            <span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5" strokeWidth={1.5} /> {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-            <span className="w-1 h-1 rounded-none bg-[var(--color-border)]" />
-            <span className="flex items-center gap-2"><Eye className="w-3.5 h-3.5" strokeWidth={1.5} /> {post.viewCount} Reads</span>
-          </motion.div>
-        </motion.div>
+          {post.title}
+        </motion.h1>
       </div>
 
-      {/* ======================================== */}
-      {/* 2. CINEMATIC COVER IMAGE (Sharp Edges)   */}
-      {/* ======================================== */}
       {post.coverImage && (
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, ease: cinematicEase, delay: 0.3 }}
-          className="w-full max-w-[1200px] mx-auto px-6 mb-24"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, ease: smoothEase, delay: 0.2 }}
+          className="w-full max-w-6xl mx-auto px-6 mb-24"
         >
-          <div className="w-full aspect-[21/9] bg-[var(--color-surface)]/20 overflow-hidden rounded-none border border-[var(--color-border)]/40">
+          {/* Made the image taller by changing aspect ratio */}
+          <div className="w-full aspect-[16/9] md:aspect-[2/1] overflow-hidden rounded-2xl md:rounded-[2rem]">
             <img 
               src={post.coverImage} 
               alt={post.title} 
-              className="w-full h-full object-cover filter grayscale-[30%] hover:grayscale-0 transition-all duration-[2s] ease-[cubic-bezier(0.16,1,0.3,1)]" 
+              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
             />
           </div>
         </motion.div>
       )}
 
       {/* ======================================== */}
-      {/* 3. MAIN CONTENT & SIDEBAR                */}
+      {/* 2. MAIN TWO-COLUMN LAYOUT                */}
       {/* ======================================== */}
-      <div className="max-w-[1000px] mx-auto px-6 flex flex-col lg:flex-row gap-16 relative">
+      <div className="max-w-6xl mx-auto px-6 flex flex-col lg:flex-row gap-16 relative pb-24">
         
-        {/* LEFT: Raw, Naked Action Icons (Sticky) */}
-        <div className="hidden lg:block w-12 shrink-0 relative">
-          <div className="sticky top-32 flex flex-col items-center gap-8">
-            <button 
-              onClick={handleLike} 
-              disabled={isLiking}
-              className="group flex flex-col items-center gap-2 outline-none"
-            >
-              <Heart className={`w-5 h-5 transition-colors duration-700 ${ isLiked ? 'fill-[var(--color-brand-accent)] text-[var(--color-brand-accent)]' : 'text-[var(--color-muted)] group-hover:text-[var(--color-brand-accent)]' }`} strokeWidth={1.5} />
-              <span className="text-[10px] font-medium text-[var(--color-muted)] tracking-widest">{likeCount}</span>
-            </button>
+        {/* LEFT SIDEBAR (Author, Tags, Share) */}
+        <div className="lg:w-64 shrink-0 order-2 lg:order-1">
+          <div className="sticky top-32 flex flex-col gap-10">
             
-            <button 
-              onClick={handleBookmark}
-              disabled={isBookmarking}
-              className="group flex flex-col items-center outline-none"
-            >
-              <Bookmark className={`w-5 h-5 transition-colors duration-700 ${ isBookmarked ? 'fill-[var(--color-brand-primary)] text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] group-hover:text-[var(--color-brand-primary)]' }`} strokeWidth={1.5} />
-            </button>
-            
-            <button onClick={() => document.getElementById('comments').scrollIntoView({ behavior: 'smooth' })} className="group outline-none">
-              <MessageSquare className="w-5 h-5 text-[var(--color-muted)] group-hover:text-[var(--color-foreground)] transition-colors duration-500" strokeWidth={1.5} />
-            </button>
-            
-            <div className="w-[1px] h-12 bg-[var(--color-border)]/40 my-2" />
-            
-            <button onClick={handleShare} className="group outline-none">
-              <Share2 className="w-5 h-5 text-[var(--color-muted)] group-hover:text-[var(--color-foreground)] transition-colors duration-500" strokeWidth={1.5} />
-            </button>
+            <Link href="/blog" className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors w-fit">
+              <ArrowLeft className="w-4 h-4" />
+              Blog
+            </Link>
+
+            {/* Author */}
+            <div>
+              <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-4">Written By</p>
+              <div className="flex items-center gap-4">
+                {post.author?.image ? (
+                  <img src={post.author.image} alt={post.author.name} className="w-12 h-12 rounded-full object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center font-medium">
+                    {post.author?.name?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="font-medium text-slate-900">{post.author?.name || 'System'}</p>
+                  <p className="text-sm text-slate-500 line-clamp-1">{post.author?.bio || 'Member of Technical Staff'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="w-full h-[1px] bg-slate-200" />
+
+            {/* Tags */}
+            {post.tags && post.tags.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-4">Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {post.tags.map(tag => (
+                    <span key={tag.id} className="px-4 py-1.5 rounded-full border border-slate-200 text-sm font-medium text-slate-600 hover:border-slate-400 transition-colors cursor-default">
+                      {tag.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="w-full h-[1px] bg-slate-200" />
+
+            {/* Actions & Share */}
+            <div>
+              <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase mb-4">Share</p>
+              <div className="flex items-center gap-4">
+                <button onClick={handleShare} className="p-2.5 rounded-full border border-slate-200 hover:bg-slate-50 transition-colors group outline-none flex items-center justify-center">
+                  <FaXTwitter className="w-4 h-4 text-slate-600 group-hover:text-slate-900" />
+                </button>
+                <button onClick={handleShare} className="p-2.5 rounded-full border border-slate-200 hover:bg-slate-50 transition-colors group outline-none flex items-center justify-center">
+                  <FaLinkedinIn className="w-4 h-4 text-slate-600 group-hover:text-blue-600" />
+                </button>
+                <div className="ml-auto flex items-center gap-3">
+                  <button onClick={handleLike} className="group outline-none flex items-center gap-1.5">
+                    <Heart className={`w-5 h-5 transition-colors ${ isLiked ? 'fill-red-500 text-red-500' : 'text-slate-400 group-hover:text-red-500' }`} strokeWidth={1.5} />
+                    <span className="text-sm font-medium text-slate-500">{likeCount}</span>
+                  </button>
+                  <button onClick={handleBookmark} className="group outline-none">
+                    <Bookmark className={`w-5 h-5 transition-colors ${ isBookmarked ? 'fill-blue-500 text-blue-500' : 'text-slate-400 group-hover:text-blue-500' }`} strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        {/* MIDDLE: Pure Typography Body */}
-        <article className="flex-1 min-w-0">
-          
+        {/* RIGHT CONTENT AREA */}
+        <article className="flex-1 min-w-0 order-1 lg:order-2 max-w-[760px]">
           <div 
-            className="prose prose-lg dark:prose-invert max-w-none 
-              prose-headings:font-normal prose-headings:tracking-tight prose-headings:text-[var(--color-foreground)] 
-              prose-p:font-light prose-p:leading-[1.9] prose-p:text-[var(--color-muted)]
-              prose-a:text-[var(--color-brand-accent)] prose-a:no-underline hover:prose-a:underline
-              prose-strong:font-medium prose-strong:text-[var(--color-foreground)]
-              prose-img:rounded-none prose-img:border prose-img:border-[var(--color-border)]/30
-              prose-blockquote:font-light prose-blockquote:border-l-[var(--color-brand-primary)] prose-blockquote:text-[var(--color-brand-dark)]"
+            className="prose prose-lg md:prose-xl max-w-none 
+              prose-headings:font-medium prose-headings:tracking-tight prose-headings:text-slate-900 
+              prose-p:font-light prose-p:leading-relaxed prose-p:text-slate-600
+              prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
+              prose-strong:font-semibold prose-strong:text-slate-900
+              prose-img:rounded-2xl prose-img:border prose-img:border-slate-200
+              prose-blockquote:font-normal prose-blockquote:border-l-4 prose-blockquote:border-slate-900 prose-blockquote:text-slate-800"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
-          {/* Tags */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-20 pt-8 border-t border-[var(--color-border)]/40 flex flex-wrap gap-4 items-center">
-              <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-muted)]">Index Tags:</span>
-              {post.tags.map(tag => (
-                <span key={tag.id} className="px-3 py-1 bg-transparent border border-[var(--color-border)]/50 text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-foreground)] rounded-none">
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          )}
-        </article>
+          {/* Comments Section */}
+          <div id="comments" className="mt-32 pt-16 border-t border-slate-200">
+            <h3 className="text-2xl font-medium tracking-tight mb-8">Comments ({post.commentCount || 0})</h3>
 
-      </div>
+            {isAuthenticated ? (
+              <form onSubmit={handleCommentSubmit} className="mb-12">
+                <div className="border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 ring-slate-200 transition-shadow">
+                  <textarea 
+                    value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Join the discussion..."
+                    disabled={isCommenting}
+                    className="w-full bg-transparent px-4 py-4 text-base outline-none resize-none min-h-[100px] placeholder:text-slate-400"
+                  />
+                  <div className="flex justify-end items-center px-4 py-3 bg-slate-50 border-t border-slate-200">
+                    <button 
+                      type="submit" 
+                      disabled={!commentText.trim() || isCommenting}
+                      className="px-6 py-2 bg-slate-900 text-white rounded-full text-sm font-medium transition-transform active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isCommenting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Post Comment'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 bg-slate-50 rounded-xl mb-12 border border-slate-200 text-center gap-4">
+                <p className="text-slate-600">Sign in to join the conversation.</p>
+                <Link
+                  href={`/login?callbackUrl=${encodeURIComponent(`/blog/${slug}`)}`}
+                  className="px-6 py-2.5 bg-slate-900 text-white rounded-full text-sm font-medium transition-transform active:scale-95"
+                >
+                  Sign In
+                </Link>
+              </div>
+            )}
 
-      {/* ======================================== */}
-      {/* MOBILE ACTION BAR (Flat Bottom Edge)     */}
-      {/* ======================================== */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[var(--color-background)] border-t border-[var(--color-border)]/40 px-6 py-4 flex justify-between items-center">
-        <button onClick={handleLike} className="flex items-center gap-2 outline-none">
-          <Heart className={`w-5 h-5 transition-colors ${ isLiked ? 'fill-[var(--color-brand-accent)] text-[var(--color-brand-accent)]' : 'text-[var(--color-muted)]' }`} strokeWidth={1.5} /> 
-          <span className="text-[11px] font-medium text-[var(--color-muted)]">{likeCount}</span>
-        </button>
-        <button onClick={() => document.getElementById('comments').scrollIntoView({ behavior: 'smooth' })} className="outline-none">
-          <MessageSquare className="w-5 h-5 text-[var(--color-muted)]" strokeWidth={1.5} />
-        </button>
-        <button onClick={handleBookmark} className="outline-none">
-          <Bookmark className={`w-5 h-5 transition-colors ${ isBookmarked ? 'fill-[var(--color-brand-primary)] text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)]' }`} strokeWidth={1.5} />
-        </button>
-        <button onClick={handleShare} className="outline-none">
-          <Share2 className="w-5 h-5 text-[var(--color-muted)]" strokeWidth={1.5} />
-        </button>
-      </div>
-
-      {/* ======================================== */}
-      {/* 4. EDITORIAL COMMENTS SECTION            */}
-      {/* ======================================== */}
-      <div id="comments" className="max-w-[700px] mx-auto px-6 mt-32">
-        <div className="border-b border-[var(--color-border)]/40 pb-6 mb-12 flex items-center justify-between">
-          <h2 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)]">
-            Discourse Log
-          </h2>
-          <span className="text-[10px] font-medium tracking-widest text-[var(--color-muted)] font-mono">
-            [{post.commentCount || 0}]
-          </span>
-        </div>
-
-        {/* Comment Input */}
-        <div className="mb-16">
-          <form onSubmit={handleCommentSubmit} className="flex flex-col border border-[var(--color-border)]/40 bg-[var(--color-surface)]/10 rounded-none focus-within:border-[var(--color-brand-accent)]/50 transition-colors duration-700">
-            <textarea 
-              value={commentText} onChange={(e) => setCommentText(e.target.value)}
-              placeholder={isAuthenticated ? "Log your perspective..." : "Authentication required to log perspective."}
-              disabled={isCommenting || !isAuthenticated}
-              className="w-full bg-transparent px-4 py-4 text-[14px] font-light outline-none resize-none min-h-[120px] text-[var(--color-foreground)] placeholder-[var(--color-muted)]/50"
-            />
-            <div className="flex justify-between items-center px-4 py-3 border-t border-[var(--color-border)]/20 bg-[var(--color-surface)]/20">
-              <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-muted)]">
-                {isAuthenticated ? user?.name : 'Guest'}
-              </span>
-              <button 
-                type="submit" 
-                disabled={!commentText.trim() || isCommenting}
-                className="px-6 py-2 bg-[var(--color-foreground)] text-[var(--color-background)] rounded-none text-[11px] font-medium uppercase tracking-[0.15em] transition-opacity hover:opacity-80 disabled:opacity-30 outline-none flex items-center gap-2"
-              >
-                {isCommenting ? <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} /> : 'Submit'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Comments Feed */}
-        <div className="space-y-10">
-          {commentsLoading ? (
-            <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} /></div>
-          ) : comments.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-[13px] font-light text-[var(--color-muted)]">No logs recorded for this transmission yet.</p>
-            </div>
-          ) : (
-            comments.map((comment) => (
-              <motion.div key={comment.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col pb-8 border-b border-[var(--color-border)]/20">
-                
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-none bg-[var(--color-border)]/30 flex items-center justify-center text-[10px] text-[var(--color-foreground)]">
+            {/* Comments Feed */}
+            <div className="space-y-8">
+              {commentsLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+              ) : comments.map((comment) => (
+                <div key={comment.id} className="flex gap-4">
+                  {comment.user?.image ? (
+                    <img src={comment.user.image} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-medium shrink-0">
                       {comment.user?.name?.charAt(0).toUpperCase()}
                     </div>
-                    <span className="font-medium text-[12px] text-[var(--color-foreground)] uppercase tracking-wider">{comment.user?.name || 'Unknown'}</span>
-                  </div>
-                  <div className="flex items-center gap-4 text-[10px] text-[var(--color-muted)] uppercase tracking-widest font-mono">
-                    <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
-                    {user?.id === comment.userId && (
-                      <div className="flex gap-3">
-                        <button onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }} className="hover:text-[var(--color-brand-primary)] transition-colors outline-none">Edit</button>
-                        <button onClick={() => handleDeleteComment(comment.id)} className="hover:text-red-500 transition-colors outline-none">Purge</button>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-baseline gap-3 mb-1">
+                      <span className="font-semibold text-slate-900">{comment.user?.name}</span>
+                      <span className="text-xs text-slate-500">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                      
+                      {user?.id === comment.userId && (
+                        <div className="ml-auto flex gap-3 text-xs font-medium text-slate-400">
+                          <button onClick={() => { setEditingCommentId(comment.id); setEditCommentText(comment.content); }} className="hover:text-slate-900">Edit</button>
+                          <button onClick={() => handleDeleteComment(comment.id)} className="hover:text-red-500">Delete</button>
+                        </div>
+                      )}
+                    </div>
+
+                    {editingCommentId === comment.id ? (
+                      <div className="mt-2 border border-slate-200 rounded-lg p-3">
+                        <textarea value={editCommentText} onChange={(e) => setEditCommentText(e.target.value)} className="w-full bg-transparent outline-none mb-3 min-h-[60px]" />
+                        <div className="flex gap-3">
+                          <button onClick={() => handleEditSubmit(comment.id)} className="text-xs font-medium bg-slate-900 text-white px-3 py-1.5 rounded-md">Save</button>
+                          <button onClick={() => setEditingCommentId(null)} className="text-xs font-medium text-slate-500 hover:text-slate-900">Cancel</button>
+                        </div>
                       </div>
+                    ) : (
+                      <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                        {comment.content}
+                      </p>
                     )}
                   </div>
                 </div>
-
-                {editingCommentId === comment.id ? (
-                  <div className="flex flex-col border border-[var(--color-border)]/40 p-2">
-                    <textarea value={editCommentText} onChange={(e) => setEditCommentText(e.target.value)} className="w-full bg-transparent text-[14px] font-light outline-none mb-3 min-h-[60px]" />
-                    <div className="flex gap-4">
-                      <button onClick={() => handleEditSubmit(comment.id)} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-brand-accent)] hover:underline outline-none">Save</button>
-                      <button onClick={() => setEditingCommentId(null)} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-muted)] hover:underline outline-none">Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-[14px] font-light text-[var(--color-foreground)]/80 leading-relaxed whitespace-pre-wrap pl-9">
-                    {comment.content}
-                  </p>
-                )}
-
-                {/* Nested Replies */}
-                {comment.replies && comment.replies.length > 0 && (
-                  <div className="mt-6 space-y-6 pl-9 border-l border-[var(--color-border)]/30 ml-3">
-                    {comment.replies.map(reply => (
-                      <div key={reply.id} className="flex flex-col">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium text-[11px] text-[var(--color-muted)] uppercase tracking-wider">{reply.user?.name}</span>
-                        </div>
-                        <p className="text-[13px] font-light text-[var(--color-foreground)]/70 leading-relaxed whitespace-pre-wrap">{reply.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            ))
-          )}
-
-          {/* Comment Pagination */}
-          {commentPagination?.totalPages > 1 && (
-            <div className="flex justify-between items-center mt-8">
-              <button onClick={() => setCommentsPage(p => Math.max(1, p - 1))} disabled={commentsPage === 1} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-foreground)] disabled:opacity-30 outline-none hover:text-[var(--color-brand-accent)] transition-colors">Previous Log</button>
-              <button onClick={() => setCommentsPage(p => Math.min(commentPagination.totalPages, p + 1))} disabled={commentsPage === commentPagination.totalPages} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-foreground)] disabled:opacity-30 outline-none hover:text-[var(--color-brand-accent)] transition-colors">Next Log</button>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+
+        </article>
       </div>
 
       {/* ======================================== */}
-      {/* 5. SHARP RELATED POSTS GRID              */}
+      {/* 3. RELATED POSTS GRID                    */}
       {/* ======================================== */}
       {relatedPosts.length > 0 && (
-        <div className="max-w-[1200px] mx-auto px-6 mt-40 pt-16 border-t border-[var(--color-border)]/40">
-          <h2 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)] mb-12">
-            Related Transmissions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {relatedPosts.map((relatedPost) => (
-              <Link key={relatedPost.id} href={`/blog/${relatedPost.slug}`} className="group block cursor-pointer">
-                <div className="w-full aspect-[4/3] bg-[var(--color-surface)]/20 overflow-hidden rounded-none border border-[var(--color-border)]/30 mb-5">
-                  {relatedPost.coverImage ? (
-                    <img src={relatedPost.coverImage} alt="" className="w-full h-full object-cover filter grayscale-[40%] group-hover:grayscale-0 transition-all duration-[1.5s]" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[var(--color-muted)]/30">
-                      <span className="text-[9px] font-mono tracking-widest uppercase">No Asset</span>
+        <div className="bg-slate-50 border-t border-slate-200 pt-24 pb-32">
+          <div className="max-w-6xl mx-auto px-6">
+            <h2 className="text-3xl font-medium tracking-tight mb-12">Read this next</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {relatedPosts.map((relatedPost) => (
+                <Link key={relatedPost.id} href={`/blog/${relatedPost.slug}`} className="group flex flex-col cursor-pointer">
+                  <div className="w-full aspect-[16/9] overflow-hidden rounded-2xl mb-6 bg-slate-100">
+                    {relatedPost.coverImage && (
+                      <img src={relatedPost.coverImage} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    )}
+                  </div>
+                  
+                  {/* Fixed Map Key Error Here */}
+                  {relatedPost.tags && relatedPost.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {relatedPost.tags.slice(0, 2).map((tag, index) => (
+                        <span key={tag.id || tag.name || index} className="px-3 py-1 rounded-full border border-slate-200 text-xs font-medium text-slate-600 bg-white">
+                          {tag.name}
+                        </span>
+                      ))}
                     </div>
                   )}
-                </div>
-                <h3 className="text-lg font-normal text-[var(--color-foreground)] leading-snug mb-3 line-clamp-2 group-hover:text-[var(--color-brand-primary)] transition-colors duration-700">
-                  {relatedPost.title}
-                </h3>
-                <div className="flex items-center gap-4 text-[10px] uppercase tracking-widest font-medium text-[var(--color-muted)]">
-                  <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" strokeWidth={1.5} /> {relatedPost.viewCount}</span>
-                  <span className="flex items-center gap-1.5"><Heart className="w-3.5 h-3.5" strokeWidth={1.5} /> {relatedPost.likeCount}</span>
-                </div>
-              </Link>
-            ))}
+
+                  <h3 className="text-xl font-medium text-slate-900 leading-snug mb-3 group-hover:text-blue-600 transition-colors">
+                    {relatedPost.title}
+                  </h3>
+                  <div className="mt-auto pt-2 text-xs font-semibold tracking-widest text-slate-400 uppercase">
+                    {formatDate(relatedPost.createdAt)} &nbsp;&bull;&nbsp; {calculateReadTime(relatedPost.content)} MIN READ
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {/* ======================================== */}
-      {/* FLAT SHARE MODAL                         */}
+      {/* SHARE MODAL                              */}
       {/* ======================================== */}
       <AnimatePresence>
         {showShareModal && post && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setShowShareModal(false)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.98, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.98, y: 10 }}
-              transition={{ duration: 0.5, ease: cinematicEase }}
+              initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[var(--color-background)] border border-[var(--color-border)]/40 rounded-none p-8 w-full max-w-md relative"
+              className="bg-white rounded-3xl p-8 w-full max-w-md relative shadow-2xl"
             >
               <button
                 onClick={() => setShowShareModal(false)}
-                className="absolute top-5 right-5 text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors outline-none"
+                className="absolute top-6 right-6 text-slate-400 hover:text-slate-900 transition-colors outline-none bg-slate-100 p-2 rounded-full"
               >
-                <X className="w-5 h-5" strokeWidth={1.5} />
+                <X className="w-4 h-4" />
               </button>
 
-              <div className="mb-8">
-                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-muted)] mb-3">Distribute</p>
-                <h3 className="text-2xl font-normal text-[var(--color-foreground)]">{post.title}</h3>
-              </div>
+              <h3 className="text-2xl font-medium mb-6 pr-8">Share this article</h3>
 
-              <div className="flex items-center gap-3 p-3 bg-transparent border border-[var(--color-border)]/50 rounded-none mb-8">
+              <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-xl mb-6 border border-slate-200">
                 <input
                   readOnly
                   value={typeof window !== "undefined" ? window.location.href : ""}
-                  className="flex-1 text-[13px] font-light text-[var(--color-muted)] bg-transparent outline-none truncate font-mono"
+                  className="flex-1 text-sm bg-transparent outline-none truncate px-3"
                 />
                 <button
                   onClick={handleCopyLink}
-                  className={`px-4 py-2 text-[10px] font-medium uppercase tracking-[0.15em] transition-all flex-shrink-0 outline-none rounded-none border border-[var(--color-foreground)] ${
-                    copied ? "bg-[var(--color-brand-primary)] text-[var(--color-background)] border-[var(--color-brand-primary)]" : "bg-[var(--color-foreground)] text-[var(--color-background)] hover:opacity-80"
-                  }`}
+                  className="px-4 py-2 text-sm font-medium bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
                 >
                   {copied ? "Copied" : "Copy"}
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 p-3 bg-black text-white rounded-none font-medium text-[11px] uppercase tracking-widest hover:bg-black/80 transition-colors border border-transparent">
-                  X / Twitter
+              <div className="grid grid-cols-2 gap-4">
+                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 py-3 bg-[#0F1419] text-white rounded-xl font-medium text-sm hover:bg-black transition-colors">
+                  <FaXTwitter className="w-[18px] h-[18px]" /> X / Twitter
                 </a>
-                <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 p-3 bg-[#0077B5] text-white rounded-none font-medium text-[11px] uppercase tracking-widest hover:bg-[#0077B5]/80 transition-colors border border-transparent">
-                  LinkedIn
+                <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 py-3 bg-[#0A66C2] text-white rounded-xl font-medium text-sm hover:bg-[#004182] transition-colors">
+                  <FaLinkedinIn className="w-[18px] h-[18px]" /> LinkedIn
                 </a>
               </div>
             </motion.div>

@@ -13,6 +13,23 @@ export const useToggleLikeMutation = () => {
   return useMutation({
     mutationFn: (params) => interactionApi.toggleLike(params),
     onSuccess: (response, variables) => {
+      // Update the user's interactions for this post instantly without refetching
+      queryClient.setQueryData(
+        queryKeys.interactions.me(variables.postId),
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              isLiked: response.data?.isLiked !== undefined ? response.data.isLiked : !old.data.isLiked
+            }
+          };
+        }
+      );
+      
+      // Invalidate the user's "Me" query to update their liked posts list in the dashboard
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.me() });
       // Only invalidate post LISTS, NOT the post detail.
       // Invalidating the detail re-triggers getPostBySlug which increments viewCount!
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
@@ -28,7 +45,22 @@ export const useToggleBookmarkMutation = () => {
 
   return useMutation({
     mutationFn: (params) => interactionApi.toggleBookmark(params),
-    onSuccess: () => {
+    onSuccess: (response, variables) => {
+      // Update the user's interactions for this post instantly without refetching
+      queryClient.setQueryData(
+        queryKeys.interactions.me(variables.postId),
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              isBookmarked: response.data?.isBookmarked !== undefined ? response.data.isBookmarked : !old.data.isBookmarked
+            }
+          };
+        }
+      );
+
       // Invalidate the user's "Me" query to update their saved bookmarks list
       queryClient.invalidateQueries({ queryKey: queryKeys.users.me() });
       // Only invalidate post LISTS, not the detail (avoids view count re-increment)

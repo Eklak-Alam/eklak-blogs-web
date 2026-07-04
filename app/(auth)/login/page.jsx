@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,14 +13,16 @@ import { useLoginMutation } from "@/hooks/mutations/useAuthMutations";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getRedirectPath } from "@/lib/utils/authRoutes";
 
-// 1. EXACT ZOD SCHEMA
+// 1. ZOD SCHEMA
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email"),
   password: z.string().min(1, "Password is required"),
 });
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
   const { mutate: loginUser, isPending } = useLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -29,10 +31,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isInitialized && isAuthenticated && user) {
-      const redirectPath = getRedirectPath(user.role);
+      const redirectPath = callbackUrl || getRedirectPath(user.role);
       router.push(redirectPath);
     }
-  }, [isInitialized, isAuthenticated, user, router]);
+  }, [isInitialized, isAuthenticated, user, router, callbackUrl]);
 
   const {
     register,
@@ -46,41 +48,44 @@ export default function LoginPage() {
   const onSubmit = (data) => {
     loginUser(data, {
       onSuccess: (response) => {
-        toast.success("Authentication successful. Welcome back.");
-        
+        toast.success("Welcome back.");
         const responseData = response?.data || response;
         const userRole = responseData?.user?.role || "USER";
-        
-        const redirectPath = getRedirectPath(userRole);
+        const redirectPath = callbackUrl || getRedirectPath(userRole);
         router.push(redirectPath);
       },
       onError: (error) => {
         const message = error.response?.data?.message || error.message || "Invalid credentials.";
         toast.error(message);
         setError("root.serverError", {
-          type: "manual", 
+          type: "manual",
           message: message,
         });
       },
     });
   };
 
-  // Cinematic easing curve
-  const cinematicEase = [0.16, 1, 0.3, 1];
-
-  const fadeUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 1.2, ease: cinematicEase } }
+  // Fluid Animation Configuration
+  const fluidEase = [0.16, 1, 0.3, 1];
+  
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.08, delayChildren: 0.1 }
+    }
   };
 
-  // Prevent flash while redirecting.
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: fluidEase } },
+  };
+
+  // Loading State
   if (isInitialized && isAuthenticated) {
     return (
-      <div className="min-h-screen w-full flex flex-col justify-center items-center bg-[#F1F2ED]">
-        <svg className="w-6 h-6 animate-spin text-[#303A2D] opacity-50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
+      <div className="h-[100dvh] w-full flex justify-center items-center bg-white">
+        <div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
       </div>
     );
   }
@@ -88,176 +93,169 @@ export default function LoginPage() {
   if (!isInitialized) return null;
 
   return (
-    // Main Container: #F1F2ED Background, pt-32 to clear the custom Navbar
-    <div className="min-h-screen w-full flex flex-col justify-center items-center relative overflow-hidden bg-[#F1F2ED] selection:bg-[#303A2D]/20 px-6 pt-32 pb-16">
+    // MAIN WRAPPER: 
+    // h-[100dvh] ensures it perfectly fits the screen height (especially on mobile).
+    // pt-20 ensures it clears your custom fixed navbar at the top.
+    <div className="h-[100dvh] w-full bg-white flex flex-col justify-center items-center relative overflow-hidden px-6 pt-20 pb-6 selection:bg-zinc-200">
       
-    
+      {/* Subtle Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] bg-zinc-50 rounded-full blur-[100px] pointer-events-none opacity-60 z-0"></div>
 
-      <motion.div 
+      <motion.div
+        variants={containerVariants}
         initial="hidden"
         animate="visible"
-        variants={{
-          hidden: { opacity: 0, y: 30 },
-          visible: { opacity: 1, y: 0, transition: { duration: 1.2, ease: cinematicEase, staggerChildren: 0.1 } }
-        }}
-        /* Form Card: #303A2D Background, Zero Shadows, 24px Rounding */
-        className="w-full max-w-[440px] p-10 md:p-12 z-10 bg-[#303A2D] rounded-[24px] relative overflow-hidden flex flex-col"
+        className="w-full max-w-[380px] relative z-10 flex flex-col"
       >
-        
-        {/* 2. Card-Level Dense Noise Texture */}
-        <div 
-          className="pointer-events-none absolute inset-0 z-0 opacity-[0.5] mix-blend-overlay"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          }}
-        ></div>
-
-        {/* Subtle Accent Glow inside Card */}
-        <div className="absolute -top-32 -left-32 w-64 h-64 bg-[var(--color-brand-accent)] rounded-full blur-[80px] opacity-10 pointer-events-none"></div>
-
         {/* Header */}
-        <motion.div variants={fadeUp} className="mb-12 text-left relative z-10">
-          <h1 className="text-3xl font-normal tracking-tight text-[#F1F2ED] mb-3">
-            System Access.
+        <motion.div variants={itemVariants} className="mb-10 text-center">
+          <h1 className="text-3xl font-medium tracking-tight text-zinc-900 mb-2">
+            Welcome
           </h1>
-          <p className="text-[15px] font-light text-[#F1F2ED]/60 leading-relaxed">
-            Authenticate identity to enter the secure workspace.
+          <p className="text-sm text-zinc-500 font-light">
+            Sign in to your account to continue
           </p>
         </motion.div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 relative z-10">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           
-          {/* EMAIL */}
-          <motion.div variants={fadeUp} className="group flex flex-col">
-            <div className={`relative flex items-center border-b transition-colors duration-700 ease-out ${errors.email ? "border-red-400/50" : "border-[#F1F2ED]/20 group-focus-within:border-[var(--color-brand-accent)]"}`}>
-              {/* Ultra-thin Email SVG */}
-              <svg className="absolute left-1 h-4 w-4 text-[#F1F2ED]/40 transition-colors duration-700 group-focus-within:text-[var(--color-brand-accent)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
-              
+          {/* SOFT ROUNDED EMAIL INPUT */}
+          <motion.div variants={itemVariants} className="group">
+            <div className="relative">
               <input
                 type="email"
                 {...register("email")}
-                placeholder="Email Address"
-                className="w-full bg-transparent pl-9 pr-4 py-3 text-[15px] font-light text-[#F1F2ED] placeholder-[#F1F2ED]/30 outline-none"
+                placeholder="Email address"
+                className={`w-full bg-zinc-50/50 hover:bg-zinc-50 border py-4 pl-5 pr-4 text-[15px] text-zinc-900 placeholder-zinc-400 outline-none transition-all duration-300 rounded-[20px] focus:bg-white focus:ring-[4px] ${
+                  errors.email 
+                    ? "border-red-200 focus:border-red-400 focus:ring-red-100" 
+                    : "border-zinc-200 focus:border-zinc-400 focus:ring-zinc-100"
+                }`}
               />
             </div>
             <AnimatePresence>
               {errors.email && (
-                <motion.p 
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="mt-2 text-[11px] text-red-400 font-medium tracking-wide px-1"
+                  className="px-2 pt-2 text-[12px] font-medium text-red-500"
                 >
                   {errors.email.message}
-                </motion.p>
+                </motion.div>
               )}
             </AnimatePresence>
           </motion.div>
 
-          {/* PASSWORD */}
-          <motion.div variants={fadeUp} className="group flex flex-col">
-            <div className={`relative flex items-center border-b transition-colors duration-700 ease-out ${errors.password ? "border-red-400/50" : "border-[#F1F2ED]/20 group-focus-within:border-[var(--color-brand-accent)]"}`}>
-              {/* Ultra-thin Lock SVG */}
-              <svg className="absolute left-1 h-4 w-4 text-[#F1F2ED]/40 transition-colors duration-700 group-focus-within:text-[var(--color-brand-accent)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-              
+          {/* SOFT ROUNDED PASSWORD INPUT */}
+          <motion.div variants={itemVariants} className="group">
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 {...register("password")}
                 placeholder="Password"
-                className="w-full bg-transparent pl-9 pr-10 py-3 text-[15px] font-light text-[#F1F2ED] placeholder-[#F1F2ED]/30 outline-none"
+                className={`w-full bg-zinc-50/50 hover:bg-zinc-50 border py-4 pl-5 pr-14 text-[15px] text-zinc-900 placeholder-zinc-400 outline-none transition-all duration-300 rounded-[20px] focus:bg-white focus:ring-[4px] ${
+                  errors.password 
+                    ? "border-red-200 focus:border-red-400 focus:ring-red-100" 
+                    : "border-zinc-200 focus:border-zinc-400 focus:ring-zinc-100"
+                }`}
               />
+              
+              {/* Soft Eye Icon Toggle */}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-1 p-2 text-[#F1F2ED]/40 hover:text-[var(--color-brand-accent)] transition-colors duration-500 outline-none"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-zinc-700 transition-colors bg-white rounded-full shadow-sm border border-zinc-100"
               >
                 {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 )}
               </button>
             </div>
             
-            {/* Error & Forgot Password */}
-            <div className="flex justify-between items-start mt-2 px-1">
-              <div className="flex-1">
-                <AnimatePresence>
-                  {errors.password && (
-                    <motion.p 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="text-[11px] text-red-400 font-medium tracking-wide"
-                    >
-                      {errors.password.message}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </div>
-              <Link 
-                href="/forgot-password" 
-                className="text-[11px] font-normal text-[#F1F2ED]/50 hover:text-[var(--color-brand-accent)] transition-colors duration-500 ml-2 whitespace-nowrap"
-              >
-                Forgot password?
-              </Link>
-            </div>
+            <AnimatePresence>
+              {errors.password && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="px-2 pt-2 text-[12px] font-medium text-red-500"
+                >
+                  {errors.password.message}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* SERVER ERROR */}
           <AnimatePresence>
             {errors.root?.serverError && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0, y: -10 }}
-                animate={{ opacity: 1, height: "auto", y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -10 }}
-                className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-400/20 rounded-[12px] mt-4"
+              <motion.div
+                initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                animate={{ opacity: 1, height: "auto", scale: 1 }}
+                exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                className="overflow-hidden"
               >
-                <svg className="w-4 h-4 text-red-400 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <p className="text-[12px] text-red-400 font-normal">
+                <div className="mt-2 py-3 px-4 bg-red-50 text-red-500 text-sm font-medium rounded-[16px] border border-red-100 flex items-center gap-2">
+                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   {errors.root.serverError.message}
-                </p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* SUBMIT BUTTON */}
-          <motion.div variants={fadeUp} className="pt-8">
+          <motion.div variants={itemVariants} className="pt-6">
+            {/* PILL-SHAPED BUTTON: Soft edges, elegant state changes */}
             <button
               type="submit"
               disabled={isPending}
-              /* Contrasting Button: Light #F1F2ED bg with Dark #303A2D text. Elegant hover state */
-              className="w-full relative group py-3.5 rounded-[16px] overflow-hidden bg-[#F1F2ED] text-[#303A2D] text-[15px] font-medium tracking-wide disabled:opacity-50 transition-colors duration-700 hover:bg-white cursor-pointer"
+              className="w-full py-4 bg-zinc-900 text-white text-[15px] font-medium rounded-full shadow-lg shadow-zinc-900/15 disabled:opacity-50 transition-all duration-300 hover:bg-zinc-800 hover:shadow-xl hover:shadow-zinc-900/20 active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              <span className="relative flex items-center justify-center gap-3">
-                {isPending ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 opacity-70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <span>Authenticating...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Sign In</span>
-                    <svg className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-[1s] ease-[cubic-bezier(0.16,1,0.3,1)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                  </>
-                )}
-              </span>
+              {isPending ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing in...
+                </>
+              ) : (
+                "Continue"
+              )}
             </button>
           </motion.div>
-        </form>
 
-        {/* FOOTER TEXT */}
-        <motion.div variants={fadeUp} className="mt-10 text-center relative z-10 border-t border-[#F1F2ED]/10 pt-6">
-          <p className="text-[12px] font-light text-[#F1F2ED]/50 tracking-wide">
-            Unregistered entity?{" "}
-            <Link href="/register" className="text-[#F1F2ED] font-normal hover:text-[var(--color-brand-accent)] transition-colors duration-500">
-              Request access
+          <motion.div variants={itemVariants} className="pt-4 flex justify-between items-center px-2">
+            <Link 
+              href="/forgot-password" 
+              className="text-[13px] font-medium text-zinc-400 hover:text-zinc-900 transition-colors"
+            >
+              Forgot password?
             </Link>
-          </p>
-        </motion.div>
-        
+            <Link 
+              href="/register" 
+              className="text-[13px] font-medium text-zinc-400 hover:text-zinc-900 transition-colors"
+            >
+              Create account
+            </Link>
+          </motion.div>
+
+        </form>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-[100dvh] flex items-center justify-center bg-white">
+        <div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

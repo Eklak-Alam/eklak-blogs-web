@@ -1,32 +1,38 @@
 export async function generateMetadata({ params }) {
-  // Resolve params for Next.js App Router
+  // Resolve params for Next.js 15 App Router standard
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
+  const baseUrl = 'https://eklak.site';
   
   try {
     // Fetch directly from the backend API for Server-Side SEO generation
-    // Using native fetch for optimal Next.js caching control
     const res = await fetch(`http://localhost:8000/api/v1/posts/${slug}`, { 
       next: { revalidate: 60 } // Revalidate every 60 seconds
     });
     
-    if (!res.ok) return { title: 'Post Not Found' };
+    if (!res.ok) return { title: '404 - Post Not Found' };
     
     const data = await res.json();
     const post = data?.data?.post || data?.post;
     
-    if (!post) return { title: 'Post Not Found' };
+    if (!post) return { title: '404 - Post Not Found' };
+
+    // Dynamically extract keywords if tags exist
+    const keywords = post.tags ? post.tags.map(tag => tag.name).join(', ') : 'Software Engineering, Full Stack, DevOps, AWS, Next.js';
+    const postUrl = post.canonicalUrl || `${baseUrl}/blog/${post.slug}`;
 
     return {
       title: post.metaTitle || post.title,
       description: post.metaDescription || post.excerpt,
+      keywords: keywords,
       alternates: {
-        canonical: post.canonicalUrl || `https://blogs-platform.com/blog/${post.slug}`,
+        canonical: postUrl,
       },
       openGraph: {
         title: post.metaTitle || post.title,
         description: post.metaDescription || post.excerpt,
-        url: `https://blogs-platform.com/blog/${post.slug}`,
+        url: postUrl,
+        siteName: 'Eklak Alam',
         images: post.coverImage ? [
           {
             url: post.coverImage,
@@ -37,20 +43,22 @@ export async function generateMetadata({ params }) {
         ] : [],
         type: 'article',
         publishedTime: post.publishedAt || post.createdAt,
-        authors: post.author?.name ? [post.author.name] : [],
+        modifiedTime: post.updatedAt,
+        authors: ['Eklak Alam'],
       },
       twitter: {
         card: 'summary_large_image',
         title: post.metaTitle || post.title,
         description: post.metaDescription || post.excerpt,
         images: post.coverImage ? [post.coverImage] : [],
+        creator: '@your_twitter_handle', // Update with your X handle
       },
     };
   } catch (error) {
     console.error("SEO Metadata Error:", error);
     return {
-      title: 'Blog Post',
-      description: 'Read the latest blog post.',
+      title: 'Engineering Blog',
+      description: 'Read the latest system architecture and engineering insights by Eklak Alam.',
     };
   }
 }
@@ -58,6 +66,7 @@ export async function generateMetadata({ params }) {
 export default async function BlogPostLayout({ children, params }) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
+  const baseUrl = 'https://eklak.site';
 
   let jsonLd = null;
 
@@ -71,6 +80,7 @@ export default async function BlogPostLayout({ children, params }) {
       const post = data?.data?.post || data?.post;
       
       if (post) {
+        // High-level Schema.org generation for rich Google Snippets
         jsonLd = {
           '@context': 'https://schema.org',
           '@type': 'BlogPosting',
@@ -78,32 +88,35 @@ export default async function BlogPostLayout({ children, params }) {
           description: post.metaDescription || post.excerpt,
           image: post.coverImage ? [post.coverImage] : [],
           datePublished: post.publishedAt || post.createdAt,
-          dateModified: post.updatedAt,
+          dateModified: post.updatedAt || post.createdAt,
           author: {
             '@type': 'Person',
-            name: post.author?.name || 'Anonymous',
+            name: 'Eklak Alam',
+            url: baseUrl,
           },
           publisher: {
-            '@type': 'Organization',
-            name: 'Gaprio',
-            logo: {
+            '@type': 'Person',
+            name: 'Eklak Alam',
+            url: baseUrl,
+            image: {
               '@type': 'ImageObject',
-              url: 'https://gaprio.com/logo.png',
+              url: `${baseUrl}/og-image.jpg`, // Ensure this image exists in your public folder
             },
           },
           mainEntityOfPage: {
             '@type': 'WebPage',
-            '@id': post.canonicalUrl || `https://blogs-platform.com/blog/${post.slug}`,
+            '@id': post.canonicalUrl || `${baseUrl}/blog/${post.slug}`,
           },
         };
       }
     }
   } catch (err) {
-    // Silently ignore, metadata function handles logging
+    // Silently ignore, the generateMetadata function already logs the error
   }
 
   return (
     <>
+      {/* Injecting JSON-LD safely into the DOM */}
       {jsonLd && (
         <script
           type="application/ld+json"

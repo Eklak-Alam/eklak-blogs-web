@@ -633,12 +633,21 @@ export default function AdminDashboardPage() {
                                 <input type="checkbox" checked={selectedPostIds.includes(post.id)} onChange={() => toggleSelectPost(post.id)} className="w-3.5 h-3.5 rounded-none border-[var(--color-border)] accent-[var(--color-brand-primary)] cursor-pointer" />
                               </td>
                               <td className="py-5 px-4">
-                                <div className="flex flex-col max-w-md">
-                                  <Link href={`/blog/${post.slug}`} target="_blank" className="text-[14px] font-normal text-[var(--color-foreground)] line-clamp-1 hover:text-[var(--color-brand-primary)] transition-colors duration-500">{post.title}</Link>
-                                  <div className="flex items-center gap-3 mt-1.5">
-                                    <span className="text-[9px] font-mono text-[var(--color-muted)] uppercase tracking-widest">{new Date(post.createdAt).toLocaleDateString()}</span>
-                                    <span className="w-1 h-1 bg-[var(--color-border)]/50 rounded-none"></span>
-                                    <span className="text-[9px] font-mono text-[var(--color-muted)] uppercase tracking-widest">[{post.viewCount}] Reads</span>
+                                <div className="flex items-center gap-4 max-w-md">
+                                  <div className="w-12 h-12 bg-[var(--color-surface)]/20 overflow-hidden shrink-0 border border-[var(--color-border)]/30">
+                                    {post.coverImage ? (
+                                      <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover filter grayscale-[40%] hover:grayscale-0 transition-all duration-500" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-[var(--color-muted)]/30"><span className="text-[7px] font-mono tracking-widest uppercase">Null</span></div>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <Link href={`/blog/${post.slug}`} target="_blank" className="text-[14px] font-normal text-[var(--color-foreground)] line-clamp-1 hover:text-[var(--color-brand-primary)] transition-colors duration-500">{post.title}</Link>
+                                    <div className="flex items-center gap-3 mt-1.5">
+                                      <span className="text-[9px] font-mono text-[var(--color-muted)] uppercase tracking-widest">{new Date(post.createdAt).toLocaleDateString()}</span>
+                                      <span className="w-1 h-1 bg-[var(--color-border)]/50 rounded-none"></span>
+                                      <span className="text-[9px] font-mono text-[var(--color-muted)] uppercase tracking-widest">[{post.viewCount}] Reads</span>
+                                    </div>
                                   </div>
                                 </div>
                               </td>

@@ -157,6 +157,10 @@ function EditorFormContent() {
   const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Image is too large. Maximum size is 10MB.");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => setCoverImageBase64(reader.result);
       reader.readAsDataURL(file);
@@ -164,7 +168,8 @@ function EditorFormContent() {
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop, accept: { 'image/*': [] }, maxFiles: 1,
+    onDrop, accept: { 'image/*': [] }, maxFiles: 1, maxSize: 10 * 1024 * 1024,
+    onDropRejected: () => toast.error("File rejected. Make sure it is a valid image under 10MB.")
   });
 
   const toggleTag = (tagId) => {
@@ -173,7 +178,11 @@ function EditorFormContent() {
 
   const onSubmit = (status) => (data) => {
     const payload = { ...data, status: status, coverImage: coverImageBase64, tags: selectedTags };
-
+    
+    // Clean up empty strings that fail backend Zod .min(1) validation
+    if (!payload.categoryId) {
+      payload.categoryId = null;
+    }
     if (existingPost) {
       updatePost({ id: existingPost.id, payload }, {
         onSuccess: () => {

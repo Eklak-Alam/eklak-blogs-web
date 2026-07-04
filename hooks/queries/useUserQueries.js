@@ -44,6 +44,14 @@ export const useGetMyBookmarksQuery = (params = { page: 1, limit: 10 }) => {
   });
 };
 
+export const useGetMyLikesQuery = (params = { page: 1, limit: 10 }) => {
+  return useQuery({
+    queryKey: [...queryKeys.users.me(), 'likes', params],
+    queryFn: () => userApi.getMyLikes(params),
+    keepPreviousData: true,
+  });
+};
+
 // ==========================================
 // 3. ADMIN QUERIES
 // ==========================================

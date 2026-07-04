@@ -40,7 +40,12 @@ export const useUpdateMyPostMutation = () => {
       // Invalidate everything this update might have touched
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.myLists() });
       queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.details() });
+      // Use refetchType: 'none' so it marks the cache as stale without immediately refetching active queries 
+      // (which prevents a 404 error if the slug was updated and the old slug is still in the URL)
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.posts.details(),
+        refetchType: 'none'
+      });
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to update post');

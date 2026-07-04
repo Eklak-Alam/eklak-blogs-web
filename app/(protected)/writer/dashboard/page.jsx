@@ -75,7 +75,7 @@ export default function WriterHubPage() {
   const posts = postsData?.data?.posts || postsData?.posts || [];
   const pagination = postsData?.data?.pagination || postsData?.pagination || {};
   const { data: analyticsData } = useGetMyAnalyticsQuery();
-  const analytics = analyticsData?.analytics || { totalViews: 0, totalLikes: 0, totalShares: 0, totalComments: 0 };
+  const analytics = analyticsData?.data || { totalViews: 0, totalLikes: 0, totalShares: 0, totalComments: 0 };
 
   if (!isInitialized) return null;
 

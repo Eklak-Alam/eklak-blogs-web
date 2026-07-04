@@ -23,9 +23,9 @@ export const useLoginMutation = () => {
       const data = response?.data || response;
       const { accessToken, refreshToken, user } = data;
 
-      // 1. Securely store tokens in cookies (keeps them logged in for 7 days)
-      Cookies.set('accessToken', accessToken, { secure: true, sameSite: 'strict' });
-      Cookies.set('refreshToken', refreshToken, { secure: true, sameSite: 'strict' });
+      // 1. Securely store tokens in cookies (keeps them logged in for 7 days across browser restarts)
+      Cookies.set('accessToken', accessToken, { expires: 1, secure: true, sameSite: 'strict' });
+      Cookies.set('refreshToken', refreshToken, { expires: 7, secure: true, sameSite: 'strict' });
 
       // 2. 🔥 INSTANTLY update Global State BEFORE the router pushes to Dashboard
       useAuthStore.getState().setUser(user);
@@ -47,9 +47,9 @@ export const useRegisterMutation = () => {
       const data = response?.data || response;
       const { accessToken, refreshToken, user } = data;
       
-      // Auto-login on registration
-      Cookies.set('accessToken', accessToken, { secure: true, sameSite: 'strict' });
-      Cookies.set('refreshToken', refreshToken, { secure: true, sameSite: 'strict' });
+      // Auto-login on registration — persist for 7 days across browser restarts
+      Cookies.set('accessToken', accessToken, { expires: 1, secure: true, sameSite: 'strict' });
+      Cookies.set('refreshToken', refreshToken, { expires: 7, secure: true, sameSite: 'strict' });
       
       // Instantly inject into Zustand so Verify Page knows who they are
       useAuthStore.getState().setUser(user);

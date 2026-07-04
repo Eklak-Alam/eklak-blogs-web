@@ -8,7 +8,7 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Shield, PenTool, Bookmark, Settings, 
-  LogOut, Loader2, ArrowRight, Activity, Lock, Trash2, X, Camera, ArrowLeft
+  LogOut, Loader2, ArrowRight, Activity, Lock, Trash2, X, Camera, ArrowLeft, Heart
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,8 +20,8 @@ import {
   useChangePasswordMutation, 
   useDeleteMyAccountMutation 
 } from "@/hooks/mutations/useUserMutations"; 
-import { useGetMyBookmarksQuery } from "@/hooks/queries/useUserQueries";
-import { useToggleBookmarkMutation } from "@/hooks/mutations/useInteractionMutations";
+import { useGetMyBookmarksQuery, useGetMyLikesQuery } from "@/hooks/queries/useUserQueries";
+import { useToggleBookmarkMutation, useToggleLikeMutation } from "@/hooks/mutations/useInteractionMutations";
 
 // Cinematic easing curve
 const cinematicEase = [0.16, 1, 0.3, 1];
@@ -43,12 +43,18 @@ export default function DashboardPage() {
 
   const userData = response?.user || response?.data?.user;
 
-  // Bookmarks state
   const [bookmarkPage, setBookmarkPage] = useState(1);
   const { data: bookmarksRes, isLoading: isBookmarksLoading } = useGetMyBookmarksQuery({ page: bookmarkPage, limit: 5 });
   const bookmarksList = bookmarksRes?.bookmarks || bookmarksRes?.data?.bookmarks || [];
   const bookmarksPagination = bookmarksRes?.pagination || bookmarksRes?.data?.pagination || {};
   const { mutate: toggleBookmark, isPending: isTogglingBookmark } = useToggleBookmarkMutation();
+
+  // Likes state
+  const [likePage, setLikePage] = useState(1);
+  const { data: likesRes, isLoading: isLikesLoading } = useGetMyLikesQuery({ page: likePage, limit: 5 });
+  const likesList = likesRes?.likes || likesRes?.data?.likes || [];
+  const likesPagination = likesRes?.pagination || likesRes?.data?.pagination || {};
+  const { mutate: toggleLike, isPending: isTogglingLike } = useToggleLikeMutation();
 
   const [activeSetting, setActiveSetting] = useState(null); 
   const [avatarBase64, setAvatarBase64] = useState(null);
@@ -315,6 +321,71 @@ export default function DashboardPage() {
                         {bookmarkPage} / {bookmarksPagination.totalPages}
                       </span>
                       <button onClick={() => setBookmarkPage(p => Math.min(bookmarksPagination.totalPages, p + 1))} disabled={bookmarkPage === bookmarksPagination.totalPages} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-foreground)] disabled:opacity-30 outline-none hover:text-[var(--color-brand-accent)] transition-colors flex items-center gap-2">
+                        Next <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* LIKED ARTICLES (LIKES) */}
+            <div className="relative overflow-hidden mt-16">
+              <h2 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)] flex items-center gap-3 mb-8 pb-4 border-b border-[var(--color-border)]/40">
+                <Heart className="w-4 h-4 text-red-500" strokeWidth={1.5} /> Liked Transmissions
+              </h2>
+
+              {isLikesLoading ? (
+                <div className="py-12 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} /></div>
+              ) : likesList.length === 0 ? (
+                <div className="py-16 text-center border border-[var(--color-border)]/30 rounded-none bg-[var(--color-surface)]/5">
+                  <p className="text-[13px] font-light text-[var(--color-muted)]">Zero records liked.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-8">
+                  {likesList.map(post => (
+                    <div key={post.likeId} className="group flex flex-col sm:flex-row gap-6 pb-8 border-b border-[var(--color-border)]/20">
+                      {/* Naked Image Frame */}
+                      <div className="w-full sm:w-40 aspect-video sm:aspect-[4/3] flex-shrink-0 bg-[var(--color-surface)]/20 rounded-none overflow-hidden relative border border-[var(--color-border)]/30">
+                        {post.coverImage ? (
+                          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover filter grayscale-[40%] group-hover:grayscale-0 transition-all duration-[1.5s]" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[var(--color-muted)]/30"><span className="text-[9px] font-mono tracking-widest uppercase">No Asset</span></div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 flex flex-col py-1">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-widest flex items-center gap-2">
+                            Liked {new Date(post.likedAt).toLocaleDateString()}
+                          </span>
+                          <button 
+                            onClick={() => toggleLike({ postId: post.id })}
+                            disabled={isTogglingLike}
+                            className="text-[var(--color-muted)] hover:text-red-400 transition-colors disabled:opacity-50 outline-none"
+                            title="Unlike Post"
+                          >
+                            <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                          </button>
+                        </div>
+                        <Link href={`/blog/${post.slug}`} className="text-xl font-normal text-[var(--color-foreground)] line-clamp-2 hover:text-[var(--color-brand-primary)] transition-colors duration-700 leading-snug mb-3">
+                          {post.title}
+                        </Link>
+                        <p className="text-[13px] font-light text-[var(--color-muted)] line-clamp-2">{post.excerpt}</p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Likes Pagination */}
+                  {likesPagination?.totalPages > 1 && (
+                    <div className="flex justify-between items-center mt-4">
+                      <button onClick={() => setLikePage(p => Math.max(1, p - 1))} disabled={likePage === 1} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-foreground)] disabled:opacity-30 outline-none hover:text-[var(--color-brand-accent)] transition-colors flex items-center gap-2">
+                        <ArrowLeft className="w-3 h-3" strokeWidth={1.5} /> Prev
+                      </button>
+                      <span className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-widest font-mono">
+                        {likePage} / {likesPagination.totalPages}
+                      </span>
+                      <button onClick={() => setLikePage(p => Math.min(likesPagination.totalPages, p + 1))} disabled={likePage === likesPagination.totalPages} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-foreground)] disabled:opacity-30 outline-none hover:text-[var(--color-brand-accent)] transition-colors flex items-center gap-2">
                         Next <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
                       </button>
                     </div>

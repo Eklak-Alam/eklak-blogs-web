@@ -12,6 +12,8 @@ import {
   useVerifyEmailMutation, 
   useResendVerificationMutation 
 } from "@/hooks/mutations/useAuthMutations";
+import { useAuthStore } from "@/store/useAuthStore";
+import { getRedirectPath } from "@/lib/utils/authRoutes";
 
 // Strict validation
 const verifySchema = z.object({
@@ -37,6 +39,7 @@ function VerifyEmailForm() {
 
   const { mutate: verifyOtp, isPending } = useVerifyEmailMutation();
   const { mutate: resendOtp, isPending: isResending } = useResendVerificationMutation();
+  const { user } = useAuthStore();
 
   const {
     register,
@@ -62,7 +65,10 @@ function VerifyEmailForm() {
     verifyOtp(data, {
       onSuccess: (res) => {
         toast.success(res.message || "Identity verified. Access granted.");
-        router.push("/login"); 
+        // User is already logged in (tokens set during registration).
+        // Redirect straight to their dashboard — no extra login needed.
+        const redirectPath = user ? getRedirectPath(user.role) : "/dashboard";
+        router.push(redirectPath);
       },
       onError: (err) => {
         toast.error(err.message || "Invalid or expired code.");

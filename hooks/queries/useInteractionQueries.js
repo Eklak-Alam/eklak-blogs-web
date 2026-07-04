@@ -15,3 +15,12 @@ export const useGetCommentsQuery = (postId, filters = { page: 1, limit: 10 }) =>
     keepPreviousData: true, // Smooth UI transitions when clicking "Next Page"
   });
 };
+
+export const useGetMyInteractionsQuery = (postId) => {
+  return useQuery({
+    queryKey: queryKeys.interactions.me(postId),
+    queryFn: () => interactionApi.getMyInteractions(postId),
+    enabled: !!postId, // Only fetch if we have a postId
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+};
