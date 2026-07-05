@@ -8,7 +8,7 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Shield, PenTool, Bookmark, Settings, 
-  LogOut, Loader2, ArrowRight, Activity, Lock, Trash2, X, Camera, ArrowLeft, Heart
+  LogOut, Loader2, ArrowRight, MessageSquare, Lock, Trash2, X, Camera, ArrowLeft, Heart, ImagePlus
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,12 +23,12 @@ import {
 import { useGetMyBookmarksQuery, useGetMyLikesQuery } from "@/hooks/queries/useUserQueries";
 import { useToggleBookmarkMutation, useToggleLikeMutation } from "@/hooks/mutations/useInteractionMutations";
 
-// Cinematic easing curve
-const cinematicEase = [0.16, 1, 0.3, 1];
+// Fluid easing curve for buttery animations
+const fluidEase = [0.16, 1, 0.3, 1];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 1.2, ease: cinematicEase } }
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: fluidEase } }
 };
 
 export default function DashboardPage() {
@@ -49,7 +49,6 @@ export default function DashboardPage() {
   const bookmarksPagination = bookmarksRes?.pagination || bookmarksRes?.data?.pagination || {};
   const { mutate: toggleBookmark, isPending: isTogglingBookmark } = useToggleBookmarkMutation();
 
-  // Likes state
   const [likePage, setLikePage] = useState(1);
   const { data: likesRes, isLoading: isLikesLoading } = useGetMyLikesQuery({ page: likePage, limit: 5 });
   const likesList = likesRes?.likes || likesRes?.data?.likes || [];
@@ -71,6 +70,10 @@ export default function DashboardPage() {
   const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image too large. Max size is 5MB.");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => setAvatarBase64(reader.result);
       reader.readAsDataURL(file);
@@ -90,14 +93,14 @@ export default function DashboardPage() {
     if (avatarBase64) payload.image = avatarBase64;
     
     if (Object.keys(payload).length === 0) {
-      toast.info("No modifications detected.");
+      toast.info("No changes made.");
       setActiveSetting(null);
       return;
     }
 
     updateProfile(payload, {
       onSuccess: () => {
-        toast.success("Identity parameters updated.");
+        toast.success("Profile updated successfully.");
         setAvatarBase64(null);
         setActiveSetting(null);
       }
@@ -107,7 +110,7 @@ export default function DashboardPage() {
   const onChangePassword = (data) => {
     changePassword(data, {
       onSuccess: () => {
-        toast.success("Security key updated successfully.");
+        toast.success("Password updated successfully.");
         resetPasswordForm();
         setActiveSetting(null);
       }
@@ -115,79 +118,65 @@ export default function DashboardPage() {
   };
 
   const handleDeleteAccount = () => {
-    if (window.confirm("CRITICAL WARNING: This action will permanently purge your identity and all associated data. Proceed?")) {
+    if (window.confirm("Are you sure? This action will permanently delete your account and all your data.")) {
       deleteAccount();
     }
   };
 
   if (!isInitialized || isLoading) {
     return (
-      <div className="min-h-screen w-full flex flex-col justify-center items-center bg-[var(--color-background)]">
-        <Loader2 className="w-6 h-6 text-[var(--color-muted)] animate-spin" strokeWidth={1.5} />
+      <div className="min-h-screen w-full flex justify-center items-center bg-[#f2f2f2]">
+        <Loader2 className="w-6 h-6 text-zinc-400 animate-spin" strokeWidth={2} />
       </div>
     );
   }
 
   if (isError || !userData) {
     return (
-      <div className="min-h-screen w-full flex flex-col justify-center items-center bg-[var(--color-background)]">
-        <p className="text-[13px] font-light text-[var(--color-muted)] mb-4">Identity verification failed.</p>
-        <button onClick={() => router.push('/login')} className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-brand-accent)] hover:underline outline-none">
-          Initiate Session
+      <div className="min-h-screen w-full flex flex-col justify-center items-center bg-[#f2f2f2]">
+        <p className="text-sm text-zinc-500 mb-4">Could not load your profile.</p>
+        <button onClick={() => router.push('/login')} className="px-6 py-2.5 bg-zinc-900 text-white rounded-full text-sm font-medium hover:bg-zinc-800 transition-colors">
+          Log in again
         </button>
       </div>
     );
   }
 
   return (
-    // pt-32 ensures clearance of the custom top navbar
-    <div className="min-h-screen w-full relative bg-[var(--color-background)] selection:bg-[var(--color-brand-primary)]/30 pt-32 pb-24 px-6 overflow-hidden">
+    <div className="min-h-screen w-full relative bg-[#f2f2f2] text-zinc-900 selection:bg-zinc-300 pt-12 pb-24 px-4 sm:px-6">
       
-      {/* Structural Background Lines */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden h-[50vh]">
-        <div 
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)`,
-            backgroundSize: "4rem 4rem",
-            maskImage: "radial-gradient(ellipse 100% 100% at 50% 0%, black 30%, transparent 80%)",
-            WebkitMaskImage: "radial-gradient(ellipse 100% 100% at 50% 0%, black 30%, transparent 80%)",
-          }}
-        />
-      </div>
-
-      <div className="relative z-10 max-w-[1300px] mx-auto w-full">
+      <div className="relative z-10 max-w-[1200px] mx-auto w-full">
         
         {/* ======================================= */}
         {/* HEADER SECTION                          */}
         {/* ======================================= */}
         <motion.div 
           initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8 border-b border-[var(--color-border)]/40 pb-12"
+          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 bg-white p-6 md:p-8 rounded-[32px] shadow-sm shadow-zinc-200/50"
         >
-          <div className="flex items-end gap-8">
-            {/* Avatar: Sharp Square Architectural Box */}
-            <motion.div variants={fadeUp} className="w-24 h-24 rounded-none border border-[var(--color-border)]/50 p-1 flex-shrink-0 bg-[var(--color-surface)]/10">
-              <div className="w-full h-full rounded-none bg-[var(--color-background)] overflow-hidden flex items-center justify-center font-normal text-3xl text-[var(--color-foreground)] filter grayscale-[20%]">
-                {userData.image ? (
-                  <img src={userData.image} alt={userData.name} className="w-full h-full object-cover" />
-                ) : (
-                  userData.name.charAt(0).toUpperCase()
-                )}
-              </div>
+          <div className="flex items-center gap-6">
+            {/* Avatar: Soft Circle */}
+            <motion.div variants={fadeUp} className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-zinc-50 flex-shrink-0 bg-zinc-100 relative overflow-hidden shadow-sm">
+              {userData.image ? (
+                <img src={userData.image} alt={userData.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center font-medium text-3xl text-zinc-400 bg-zinc-100">
+                  {userData.name.charAt(0).toUpperCase()}
+                </div>
+              )}
             </motion.div>
             
             <div className="flex flex-col">
-              <motion.div variants={fadeUp} className="flex items-center gap-4 mb-3">
-                <h1 className="text-4xl md:text-5xl font-normal tracking-tight text-[var(--color-foreground)] leading-none">
-                  {userData.name.split(' ')[0]}.
+              <motion.div variants={fadeUp} className="flex items-center gap-3 mb-1">
+                <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900">
+                  {userData.name}
                 </h1>
-                <span className="px-3 py-1 text-[9px] font-medium tracking-[0.2em] uppercase rounded-none border border-[var(--color-border)]/50 text-[var(--color-muted)] bg-[var(--color-surface)]/20">
+                <span className="px-3 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full bg-zinc-100 text-zinc-500">
                   {userData.role}
                 </span>
               </motion.div>
-              <motion.p variants={fadeUp} className="text-[var(--color-muted)] text-[14px] font-light">
-                Identity confirmed. Welcome to the central terminal.
+              <motion.p variants={fadeUp} className="text-zinc-500 text-sm font-medium">
+                {userData.email}
               </motion.p>
             </div>
           </div>
@@ -196,52 +185,53 @@ export default function DashboardPage() {
             variants={fadeUp}
             onClick={() => logoutUser()}
             disabled={isLoggingOut}
-            className="group flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-muted)] hover:text-red-400 transition-colors duration-500 outline-none"
+            className="flex items-center gap-2 px-5 py-2.5 bg-zinc-100 hover:bg-red-50 text-zinc-600 hover:text-red-600 text-sm font-medium rounded-full transition-colors outline-none disabled:opacity-50"
           >
-            {isLoggingOut ? <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} /> : <LogOut className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" strokeWidth={1.5} />}
-            Terminate Session
+            {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+            Log Out
           </motion.button>
         </motion.div>
 
         {/* ======================================= */}
         {/* DASHBOARD GRID                          */}
         {/* ======================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
           {/* ======================================= */}
           {/* LEFT COLUMN: Main Features & Content    */}
           {/* ======================================= */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: cinematicEase, delay: 0.1 }}
-            className="lg:col-span-8 flex flex-col"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: fluidEase, delay: 0.1 }}
+            className="lg:col-span-8 flex flex-col gap-6 lg:gap-8"
           >
             
-            {/* WRITER WORKSPACE PROMO (If not USER) */}
+            {/* WRITER WORKSPACE (If not USER) */}
             {userData.role !== "USER" && (
-              <div className="mb-16 border border-[var(--color-border)]/40 p-8 md:p-12 rounded-none bg-[var(--color-surface)]/5 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
-                  <PenTool className="w-48 h-48 text-[var(--color-foreground)]" strokeWidth={0.5} />
+              <div className="bg-white p-8 md:p-10 rounded-[32px] shadow-sm shadow-zinc-200/50">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-[#f2f2f2] rounded-full text-zinc-900">
+                    <PenTool className="w-5 h-5" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-zinc-900">Writer's Workspace</h2>
                 </div>
-                <h2 className="text-[10px] font-medium uppercase tracking-[0.2em] text-[var(--color-brand-primary)] mb-4">Command Module</h2>
-                <h3 className="text-3xl font-normal text-[var(--color-foreground)] mb-3 relative z-10">Writer's Workspace</h3>
-                <p className="text-[14px] font-light text-[var(--color-muted)] mb-10 relative z-10 max-w-md leading-relaxed">
-                  Access the editorial suite to initialize drafts, review publications, and analyze transmission metrics.
+                <p className="text-sm text-zinc-500 mb-8 max-w-md">
+                  Manage your drafts, publish new stories, and see how your posts are performing.
                 </p>
-                <div className="flex flex-wrap gap-8 relative z-10">
-                  <Link href="/editor/dashboard" className="group flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-[var(--color-foreground)] hover:text-[var(--color-brand-accent)] transition-colors outline-none">
-                    Initialize Draft <ArrowRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-500" strokeWidth={1.5} />
+                <div className="flex flex-wrap gap-4">
+                  <Link href="/editor/dashboard" className="px-6 py-3 bg-zinc-900 text-white text-sm font-medium rounded-full hover:bg-zinc-800 transition-colors shadow-md shadow-zinc-900/10 flex items-center gap-2">
+                    Write New Post <ArrowRight className="w-4 h-4" />
                   </Link>
-                  <Link href="/writer/dashboard" className="group flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors outline-none">
-                    View Records <ArrowRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-500" strokeWidth={1.5} />
+                  <Link href="/writer/dashboard" className="px-6 py-3 bg-[#f2f2f2] text-zinc-700 hover:text-zinc-900 text-sm font-medium rounded-full hover:bg-zinc-200 transition-colors">
+                    Manage Posts
                   </Link>
                   {(userData.role === "AUTHOR" || userData.role === "ADMIN") && (
-                    <Link href="/author/dashboard" className="group flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors outline-none">
-                      Author Suite <ArrowRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-500" strokeWidth={1.5} />
+                    <Link href="/author/dashboard" className="px-6 py-3 bg-[#f2f2f2] text-zinc-700 hover:text-zinc-900 text-sm font-medium rounded-full hover:bg-zinc-200 transition-colors">
+                      Author Tools
                     </Link>
                   )}
                   {userData.role === "ADMIN" && (
-                    <Link href="/admin/dashboard" className="group flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-red-400 hover:text-red-300 transition-colors outline-none">
-                      Admin Root <ArrowRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-500" strokeWidth={1.5} />
+                    <Link href="/admin/dashboard" className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-medium rounded-full transition-colors">
+                      Admin Panel
                     </Link>
                   )}
                 </div>
@@ -249,79 +239,81 @@ export default function DashboardPage() {
             )}
 
             {/* QUICK STATS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 border-y border-[var(--color-border)]/40 divide-y sm:divide-y-0 sm:divide-x divide-[var(--color-border)]/40 mb-16">
-              <div className="py-8 flex flex-col justify-center items-center text-center">
-                <p className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                  <Bookmark className="w-3.5 h-3.5" strokeWidth={1.5} /> Index Archives
-                </p>
-                <p className="text-4xl font-normal text-[var(--color-foreground)]">{userData._count?.bookmarks || 0}</p>
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
+              <div className="bg-white p-6 rounded-[32px] shadow-sm shadow-zinc-200/50 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 bg-[#f2f2f2] rounded-full flex items-center justify-center text-zinc-700 mb-3">
+                  <Bookmark className="w-5 h-5" />
+                </div>
+                <p className="text-3xl font-semibold text-zinc-900 mb-1">{userData._count?.bookmarks || 0}</p>
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Saved Posts</p>
               </div>
-              <div className="py-8 flex flex-col justify-center items-center text-center">
-                <p className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                  <Activity className="w-3.5 h-3.5" strokeWidth={1.5} /> Discourse Logs
-                </p>
-                <p className="text-4xl font-normal text-[var(--color-foreground)]">{userData._count?.comments || 0}</p>
+              <div className="bg-white p-6 rounded-[32px] shadow-sm shadow-zinc-200/50 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 bg-[#f2f2f2] rounded-full flex items-center justify-center text-zinc-700 mb-3">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <p className="text-3xl font-semibold text-zinc-900 mb-1">{userData._count?.comments || 0}</p>
+                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Comments Made</p>
               </div>
             </div>
 
             {/* SAVED ARTICLES (BOOKMARKS) */}
-            <div className="relative overflow-hidden">
-              <h2 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)] flex items-center gap-3 mb-8 pb-4 border-b border-[var(--color-border)]/40">
-                <Bookmark className="w-4 h-4 text-[var(--color-brand-primary)]" strokeWidth={1.5} /> Archived Transmissions
+            <div className="bg-white p-6 md:p-10 rounded-[32px] shadow-sm shadow-zinc-200/50">
+              <h2 className="text-lg font-semibold text-zinc-900 flex items-center gap-2 mb-6">
+                <Bookmark className="w-5 h-5" /> Saved Posts
               </h2>
 
               {isBookmarksLoading ? (
-                <div className="py-12 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} /></div>
+                <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-zinc-300" /></div>
               ) : bookmarksList.length === 0 ? (
-                <div className="py-16 text-center border border-[var(--color-border)]/30 rounded-none bg-[var(--color-surface)]/5">
-                  <p className="text-[13px] font-light text-[var(--color-muted)]">Zero records archived.</p>
+                <div className="py-12 text-center bg-[#f2f2f2] rounded-[24px]">
+                  <p className="text-sm text-zinc-500">You haven't saved any posts yet.</p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-6">
                   {bookmarksList.map(post => (
-                    <div key={post.bookmarkId} className="group flex flex-col sm:flex-row gap-6 pb-8 border-b border-[var(--color-border)]/20">
-                      {/* Naked Image Frame */}
-                      <div className="w-full sm:w-40 aspect-video sm:aspect-[4/3] flex-shrink-0 bg-[var(--color-surface)]/20 rounded-none overflow-hidden relative border border-[var(--color-border)]/30">
+                    <div key={post.bookmarkId} className="group flex flex-col sm:flex-row gap-5 pb-6 border-b border-zinc-100 last:border-0 last:pb-0">
+                      {/* Soft Image Frame */}
+                      <div className="w-full sm:w-36 aspect-video flex-shrink-0 bg-[#f2f2f2] rounded-[16px] overflow-hidden relative">
                         {post.coverImage ? (
-                          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover filter grayscale-[40%] group-hover:grayscale-0 transition-all duration-[1.5s]" />
+                          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[var(--color-muted)]/30"><span className="text-[9px] font-mono tracking-widest uppercase">No Asset</span></div>
+                          <div className="w-full h-full flex items-center justify-center text-zinc-400"><ImagePlus className="w-6 h-6" /></div>
                         )}
                       </div>
                       
-                      <div className="flex-1 flex flex-col py-1">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-widest flex items-center gap-2">
-                            Saved {new Date(post.bookmarkedAt).toLocaleDateString()}
+                      <div className="flex-1 flex flex-col justify-center">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-zinc-400">
+                            Saved on {new Date(post.bookmarkedAt).toLocaleDateString()}
                           </span>
                           <button 
                             onClick={() => toggleBookmark(post.id)}
                             disabled={isTogglingBookmark}
-                            className="text-[var(--color-muted)] hover:text-red-400 transition-colors disabled:opacity-50 outline-none"
-                            title="Purge Bookmark"
+                            className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 outline-none"
+                            title="Remove Bookmark"
                           >
-                            <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        <Link href={`/blog/${post.slug}`} className="text-xl font-normal text-[var(--color-foreground)] line-clamp-2 hover:text-[var(--color-brand-primary)] transition-colors duration-700 leading-snug mb-3">
+                        <Link href={`/blog/${post.slug}`} className="text-lg font-medium text-zinc-900 hover:text-zinc-600 transition-colors line-clamp-2 mb-2">
                           {post.title}
                         </Link>
-                        <p className="text-[13px] font-light text-[var(--color-muted)] line-clamp-2">{post.excerpt}</p>
+                        <p className="text-sm text-zinc-500 line-clamp-2">{post.excerpt}</p>
                       </div>
                     </div>
                   ))}
 
                   {/* Bookmarks Pagination */}
                   {bookmarksPagination?.totalPages > 1 && (
-                    <div className="flex justify-between items-center mt-4">
-                      <button onClick={() => setBookmarkPage(p => Math.max(1, p - 1))} disabled={bookmarkPage === 1} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-foreground)] disabled:opacity-30 outline-none hover:text-[var(--color-brand-accent)] transition-colors flex items-center gap-2">
-                        <ArrowLeft className="w-3 h-3" strokeWidth={1.5} /> Prev
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-zinc-100">
+                      <button onClick={() => setBookmarkPage(p => Math.max(1, p - 1))} disabled={bookmarkPage === 1} className="px-4 py-2 text-sm font-medium text-zinc-700 bg-[#f2f2f2] rounded-full disabled:opacity-50 hover:bg-zinc-200 transition-colors">
+                        Previous
                       </button>
-                      <span className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-widest font-mono">
-                        {bookmarkPage} / {bookmarksPagination.totalPages}
+                      <span className="text-xs font-medium text-zinc-500">
+                        Page {bookmarkPage} of {bookmarksPagination.totalPages}
                       </span>
-                      <button onClick={() => setBookmarkPage(p => Math.min(bookmarksPagination.totalPages, p + 1))} disabled={bookmarkPage === bookmarksPagination.totalPages} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-foreground)] disabled:opacity-30 outline-none hover:text-[var(--color-brand-accent)] transition-colors flex items-center gap-2">
-                        Next <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+                      <button onClick={() => setBookmarkPage(p => Math.min(bookmarksPagination.totalPages, p + 1))} disabled={bookmarkPage === bookmarksPagination.totalPages} className="px-4 py-2 text-sm font-medium text-zinc-700 bg-[#f2f2f2] rounded-full disabled:opacity-50 hover:bg-zinc-200 transition-colors">
+                        Next
                       </button>
                     </div>
                   )}
@@ -330,63 +322,63 @@ export default function DashboardPage() {
             </div>
 
             {/* LIKED ARTICLES (LIKES) */}
-            <div className="relative overflow-hidden mt-16">
-              <h2 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)] flex items-center gap-3 mb-8 pb-4 border-b border-[var(--color-border)]/40">
-                <Heart className="w-4 h-4 text-red-500" strokeWidth={1.5} /> Liked Transmissions
+            <div className="bg-white p-6 md:p-10 rounded-[32px] shadow-sm shadow-zinc-200/50">
+              <h2 className="text-lg font-semibold text-zinc-900 flex items-center gap-2 mb-6">
+                <Heart className="w-5 h-5 text-red-500" /> Liked Posts
               </h2>
 
               {isLikesLoading ? (
-                <div className="py-12 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} /></div>
+                <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-zinc-300" /></div>
               ) : likesList.length === 0 ? (
-                <div className="py-16 text-center border border-[var(--color-border)]/30 rounded-none bg-[var(--color-surface)]/5">
-                  <p className="text-[13px] font-light text-[var(--color-muted)]">Zero records liked.</p>
+                <div className="py-12 text-center bg-[#f2f2f2] rounded-[24px]">
+                  <p className="text-sm text-zinc-500">You haven't liked any posts yet.</p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-6">
                   {likesList.map(post => (
-                    <div key={post.likeId} className="group flex flex-col sm:flex-row gap-6 pb-8 border-b border-[var(--color-border)]/20">
-                      {/* Naked Image Frame */}
-                      <div className="w-full sm:w-40 aspect-video sm:aspect-[4/3] flex-shrink-0 bg-[var(--color-surface)]/20 rounded-none overflow-hidden relative border border-[var(--color-border)]/30">
+                    <div key={post.likeId} className="group flex flex-col sm:flex-row gap-5 pb-6 border-b border-zinc-100 last:border-0 last:pb-0">
+                      {/* Soft Image Frame */}
+                      <div className="w-full sm:w-36 aspect-video flex-shrink-0 bg-[#f2f2f2] rounded-[16px] overflow-hidden relative">
                         {post.coverImage ? (
-                          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover filter grayscale-[40%] group-hover:grayscale-0 transition-all duration-[1.5s]" />
+                          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-[var(--color-muted)]/30"><span className="text-[9px] font-mono tracking-widest uppercase">No Asset</span></div>
+                          <div className="w-full h-full flex items-center justify-center text-zinc-400"><ImagePlus className="w-6 h-6" /></div>
                         )}
                       </div>
                       
-                      <div className="flex-1 flex flex-col py-1">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-widest flex items-center gap-2">
-                            Liked {new Date(post.likedAt).toLocaleDateString()}
+                      <div className="flex-1 flex flex-col justify-center">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-zinc-400">
+                            Liked on {new Date(post.likedAt).toLocaleDateString()}
                           </span>
                           <button 
                             onClick={() => toggleLike({ postId: post.id })}
                             disabled={isTogglingLike}
-                            className="text-[var(--color-muted)] hover:text-red-400 transition-colors disabled:opacity-50 outline-none"
+                            className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 outline-none"
                             title="Unlike Post"
                           >
-                            <Trash2 className="w-4 h-4" strokeWidth={1.5} />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        <Link href={`/blog/${post.slug}`} className="text-xl font-normal text-[var(--color-foreground)] line-clamp-2 hover:text-[var(--color-brand-primary)] transition-colors duration-700 leading-snug mb-3">
+                        <Link href={`/blog/${post.slug}`} className="text-lg font-medium text-zinc-900 hover:text-zinc-600 transition-colors line-clamp-2 mb-2">
                           {post.title}
                         </Link>
-                        <p className="text-[13px] font-light text-[var(--color-muted)] line-clamp-2">{post.excerpt}</p>
+                        <p className="text-sm text-zinc-500 line-clamp-2">{post.excerpt}</p>
                       </div>
                     </div>
                   ))}
 
                   {/* Likes Pagination */}
                   {likesPagination?.totalPages > 1 && (
-                    <div className="flex justify-between items-center mt-4">
-                      <button onClick={() => setLikePage(p => Math.max(1, p - 1))} disabled={likePage === 1} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-foreground)] disabled:opacity-30 outline-none hover:text-[var(--color-brand-accent)] transition-colors flex items-center gap-2">
-                        <ArrowLeft className="w-3 h-3" strokeWidth={1.5} /> Prev
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-zinc-100">
+                      <button onClick={() => setLikePage(p => Math.max(1, p - 1))} disabled={likePage === 1} className="px-4 py-2 text-sm font-medium text-zinc-700 bg-[#f2f2f2] rounded-full disabled:opacity-50 hover:bg-zinc-200 transition-colors">
+                        Previous
                       </button>
-                      <span className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-widest font-mono">
-                        {likePage} / {likesPagination.totalPages}
+                      <span className="text-xs font-medium text-zinc-500">
+                        Page {likePage} of {likesPagination.totalPages}
                       </span>
-                      <button onClick={() => setLikePage(p => Math.min(likesPagination.totalPages, p + 1))} disabled={likePage === likesPagination.totalPages} className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-foreground)] disabled:opacity-30 outline-none hover:text-[var(--color-brand-accent)] transition-colors flex items-center gap-2">
-                        Next <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+                      <button onClick={() => setLikePage(p => Math.min(likesPagination.totalPages, p + 1))} disabled={likePage === likesPagination.totalPages} className="px-4 py-2 text-sm font-medium text-zinc-700 bg-[#f2f2f2] rounded-full disabled:opacity-50 hover:bg-zinc-200 transition-colors">
+                        Next
                       </button>
                     </div>
                   )}
@@ -399,10 +391,10 @@ export default function DashboardPage() {
           {/* RIGHT COLUMN: Parameters / Settings     */}
           {/* ======================================= */}
           <motion.div 
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1.2, ease: cinematicEase, delay: 0.2 }}
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: fluidEase, delay: 0.2 }}
             className="lg:col-span-4"
           >
-            <div className="border border-[var(--color-border)]/40 p-8 md:p-10 rounded-none bg-[var(--color-surface)]/5 relative overflow-hidden min-h-[400px]">
+            <div className="bg-white p-6 md:p-8 rounded-[32px] shadow-sm shadow-zinc-200/50 min-h-[450px] relative overflow-hidden sticky top-[100px]">
               
               <AnimatePresence mode="wait">
                 
@@ -410,50 +402,50 @@ export default function DashboardPage() {
                 {!activeSetting && (
                   <motion.div 
                     key="menu"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
                     className="flex flex-col h-full"
                   >
-                    <h3 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)] mb-8 flex items-center gap-3 border-b border-[var(--color-border)]/40 pb-4">
-                      <Settings className="w-4 h-4 text-[var(--color-brand-accent)]" strokeWidth={1.5} /> System Parameters
+                    <h3 className="text-lg font-semibold text-zinc-900 mb-6 flex items-center gap-2">
+                      <Settings className="w-5 h-5" /> Settings
                     </h3>
                     
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3">
                       <button 
                         onClick={() => setActiveSetting('profile')}
-                        className="group flex items-center justify-between p-4 bg-transparent border border-[var(--color-border)]/40 hover:border-[var(--color-foreground)]/40 transition-colors duration-500 rounded-none outline-none text-left"
+                        className="group flex items-center justify-between p-4 bg-[#f2f2f2] hover:bg-zinc-200/60 transition-colors rounded-[20px] outline-none text-left"
                       >
                         <div className="flex items-center gap-4">
-                          <User className="w-4 h-4 text-[var(--color-muted)] group-hover:text-[var(--color-brand-primary)] transition-colors" strokeWidth={1.5} />
+                          <div className="p-2 bg-white rounded-full text-zinc-600 shadow-sm"><User className="w-4 h-4" /></div>
                           <div>
-                            <h4 className="text-[13px] font-medium text-[var(--color-foreground)] uppercase tracking-wider mb-1">Identity Config</h4>
-                            <p className="text-[11px] font-light text-[var(--color-muted)]">Modify designation and avatar</p>
+                            <h4 className="text-sm font-medium text-zinc-900 mb-0.5">Edit Profile</h4>
+                            <p className="text-xs text-zinc-500">Change your name and photo</p>
                           </div>
                         </div>
-                        <ArrowRight className="w-3.5 h-3.5 text-[var(--color-muted)] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" strokeWidth={1.5} />
+                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 group-hover:translate-x-1 transition-all" />
                       </button>
 
                       <button 
                         onClick={() => setActiveSetting('password')}
-                        className="group flex items-center justify-between p-4 bg-transparent border border-[var(--color-border)]/40 hover:border-[var(--color-foreground)]/40 transition-colors duration-500 rounded-none outline-none text-left"
+                        className="group flex items-center justify-between p-4 bg-[#f2f2f2] hover:bg-zinc-200/60 transition-colors rounded-[20px] outline-none text-left"
                       >
                         <div className="flex items-center gap-4">
-                          <Lock className="w-4 h-4 text-[var(--color-muted)] group-hover:text-[var(--color-brand-primary)] transition-colors" strokeWidth={1.5} />
+                          <div className="p-2 bg-white rounded-full text-zinc-600 shadow-sm"><Lock className="w-4 h-4" /></div>
                           <div>
-                            <h4 className="text-[13px] font-medium text-[var(--color-foreground)] uppercase tracking-wider mb-1">Security Protocol</h4>
-                            <p className="text-[11px] font-light text-[var(--color-muted)]">Update cryptographic keys</p>
+                            <h4 className="text-sm font-medium text-zinc-900 mb-0.5">Password</h4>
+                            <p className="text-xs text-zinc-500">Update your security key</p>
                           </div>
                         </div>
-                        <ArrowRight className="w-3.5 h-3.5 text-[var(--color-muted)] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" strokeWidth={1.5} />
+                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 group-hover:translate-x-1 transition-all" />
                       </button>
                     </div>
 
-                    <div className="mt-auto pt-16">
+                    <div className="mt-auto pt-10">
                       <button 
                         onClick={handleDeleteAccount}
-                        className="group flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.2em] text-red-400/70 hover:text-red-400 transition-colors duration-500 outline-none w-full text-left"
+                        className="w-full flex items-center justify-center gap-2 py-4 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium rounded-[20px] transition-colors outline-none"
                       >
-                        {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.5} /> : <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />}
-                        Purge Identity
+                        {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        Delete Account
                       </button>
                     </div>
                   </motion.div>
@@ -463,67 +455,65 @@ export default function DashboardPage() {
                 {activeSetting === 'profile' && (
                   <motion.form 
                     key="profile"
-                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.3 }}
+                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}
                     onSubmit={handleProfileSubmit(onUpdateProfile)} 
                     className="flex flex-col h-full"
                   >
-                    <div className="flex items-center justify-between border-b border-[var(--color-border)]/40 pb-4 mb-8">
-                      <h3 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)]">Identity Config</h3>
-                      <button type="button" onClick={() => { setActiveSetting(null); setAvatarBase64(null); }} className="text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors outline-none">
-                        <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+                    <div className="flex items-center gap-3 mb-8">
+                      <button type="button" onClick={() => { setActiveSetting(null); setAvatarBase64(null); }} className="p-2 bg-[#f2f2f2] hover:bg-zinc-200 rounded-full text-zinc-600 transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
                       </button>
+                      <h3 className="text-lg font-semibold text-zinc-900">Edit Profile</h3>
                     </div>
 
                     {/* Image Upload */}
-                    <div className="mb-8">
-                      <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-4 block">Visual Asset</label>
+                    <div className="mb-6 flex justify-center">
                       <div {...getRootProps()} 
-                        className={`border border-[var(--color-border)]/50 rounded-none text-center cursor-pointer transition-colors duration-500 overflow-hidden relative group ${isDragActive ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/5' : 'hover:border-[var(--color-foreground)]/30 bg-transparent'} ${avatarBase64 || userData.image ? 'p-0 aspect-square w-24 rounded-none' : 'p-6'}`}
+                        className={`border-2 border-dashed rounded-full text-center cursor-pointer transition-all duration-300 overflow-hidden relative group w-24 h-24 ${isDragActive ? 'border-zinc-400 bg-zinc-100' : 'border-zinc-200 hover:border-zinc-300 bg-[#f2f2f2]'}`}
                       >
                         <input {...getInputProps()} />
                         {(avatarBase64 || userData.image) ? (
                           <div className="w-full h-full relative">
-                            <img src={avatarBase64 || userData.image} alt="Preview" className="w-full h-full object-cover filter grayscale-[20%]" />
-                            <div className="absolute inset-0 bg-[var(--color-background)]/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center backdrop-blur-sm">
-                              <Camera className="w-5 h-5 text-[var(--color-foreground)]" strokeWidth={1.5} />
+                            <img src={avatarBase64 || userData.image} alt="Preview" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-white/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Camera className="w-5 h-5 text-zinc-800" />
                             </div>
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center justify-center text-[var(--color-muted)]">
-                            <Camera className="w-5 h-5 mb-3 opacity-50" strokeWidth={1.5} />
-                            <p className="text-[10px] font-medium text-[var(--color-foreground)] uppercase tracking-widest">Update Asset</p>
+                          <div className="flex flex-col items-center justify-center h-full text-zinc-400 group-hover:text-zinc-600">
+                            <Camera className="w-6 h-6" />
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="mb-6">
-                      <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-2 block">Designation (Name)</label>
+                    <div className="mb-4">
+                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Full Name</label>
                       <input 
                         type="text" 
                         defaultValue={userData.name}
                         {...registerProfile("name")} 
-                        className="w-full bg-transparent border-b border-[var(--color-border)]/50 rounded-none px-2 py-2 text-[13px] font-light text-[var(--color-foreground)] outline-none focus:border-[var(--color-foreground)] transition-colors" 
+                        className="w-full bg-[#f2f2f2] focus:bg-white border border-transparent focus:border-zinc-300 rounded-[20px] px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-4 focus:ring-zinc-100 transition-all" 
                       />
                     </div>
 
-                    <div className="mb-10">
-                      <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-2 block">Comm Channel (Phone)</label>
+                    <div className="mb-8">
+                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Phone Number</label>
                       <input 
                         type="text" 
                         defaultValue={userData.phoneNumber || ''}
-                        placeholder="+1 234..."
+                        placeholder="Optional"
                         {...registerProfile("phoneNumber")} 
-                        className="w-full bg-transparent border-b border-[var(--color-border)]/50 rounded-none px-2 py-2 text-[13px] font-light text-[var(--color-foreground)] outline-none focus:border-[var(--color-foreground)] transition-colors placeholder-[var(--color-muted)]/50" 
+                        className="w-full bg-[#f2f2f2] focus:bg-white border border-transparent focus:border-zinc-300 rounded-[20px] px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-4 focus:ring-zinc-100 transition-all" 
                       />
                     </div>
 
                     <button 
                       type="submit"
                       disabled={isUpdatingProfile} 
-                      className="mt-auto w-full py-3.5 bg-[var(--color-foreground)] text-[var(--color-background)] text-[11px] font-medium uppercase tracking-[0.15em] hover:opacity-90 transition-opacity flex justify-center items-center gap-2 outline-none"
+                      className="mt-auto w-full py-4 bg-zinc-900 text-white text-sm font-medium rounded-full hover:bg-zinc-800 active:scale-[0.98] transition-all flex justify-center items-center gap-2 shadow-md shadow-zinc-900/10"
                     >
-                      {isUpdatingProfile ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : "Update Parameters"}
+                      {isUpdatingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
                     </button>
                   </motion.form>
                 )}
@@ -532,41 +522,41 @@ export default function DashboardPage() {
                 {activeSetting === 'password' && (
                   <motion.form 
                     key="password"
-                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.3 }}
+                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}
                     onSubmit={handlePasswordSubmit(onChangePassword)} 
                     className="flex flex-col h-full"
                   >
-                    <div className="flex items-center justify-between border-b border-[var(--color-border)]/40 pb-4 mb-8">
-                      <h3 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)]">Security Protocol</h3>
-                      <button type="button" onClick={() => { setActiveSetting(null); resetPasswordForm(); }} className="text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors outline-none">
-                        <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+                    <div className="flex items-center gap-3 mb-8">
+                      <button type="button" onClick={() => { setActiveSetting(null); resetPasswordForm(); }} className="p-2 bg-[#f2f2f2] hover:bg-zinc-200 rounded-full text-zinc-600 transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
                       </button>
+                      <h3 className="text-lg font-semibold text-zinc-900">Change Password</h3>
                     </div>
 
-                    <div className="mb-6">
-                      <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-2 block">Current Key</label>
+                    <div className="mb-4">
+                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Current Password</label>
                       <input 
                         type="password" 
                         {...registerPassword("currentPassword", { required: true })} 
-                        className="w-full bg-transparent border-b border-[var(--color-border)]/50 rounded-none px-2 py-2 text-[13px] font-light text-[var(--color-foreground)] outline-none focus:border-[var(--color-foreground)] transition-colors" 
+                        className="w-full bg-[#f2f2f2] focus:bg-white border border-transparent focus:border-zinc-300 rounded-[20px] px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-4 focus:ring-zinc-100 transition-all" 
                       />
                     </div>
 
-                    <div className="mb-10">
-                      <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-2 block">New Key</label>
+                    <div className="mb-8">
+                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">New Password</label>
                       <input 
                         type="password" 
                         {...registerPassword("newPassword", { required: true, minLength: 8 })} 
-                        className="w-full bg-transparent border-b border-[var(--color-border)]/50 rounded-none px-2 py-2 text-[13px] font-light text-[var(--color-foreground)] outline-none focus:border-[var(--color-foreground)] transition-colors" 
+                        className="w-full bg-[#f2f2f2] focus:bg-white border border-transparent focus:border-zinc-300 rounded-[20px] px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-4 focus:ring-zinc-100 transition-all" 
                       />
                     </div>
 
                     <button 
                       type="submit"
                       disabled={isChangingPassword} 
-                      className="mt-auto w-full py-3.5 bg-[var(--color-foreground)] text-[var(--color-background)] text-[11px] font-medium uppercase tracking-[0.15em] hover:opacity-90 transition-opacity flex justify-center items-center gap-2 outline-none"
+                      className="mt-auto w-full py-4 bg-zinc-900 text-white text-sm font-medium rounded-full hover:bg-zinc-800 active:scale-[0.98] transition-all flex justify-center items-center gap-2 shadow-md shadow-zinc-900/10"
                     >
-                      {isChangingPassword ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : "Update Key"}
+                      {isChangingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update Password"}
                     </button>
                   </motion.form>
                 )}

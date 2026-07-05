@@ -13,7 +13,29 @@ export default function Navbar() {
   const pathname = usePathname();
 
   // ==========================================
-  // SMART SCROLL (Hide on scroll down, show on scroll up)
+  // HIDE NAVBAR ON SPECIFIC ROUTES
+  // ==========================================
+  // Add any base paths here where you DO NOT want the navbar to show.
+  const hiddenRoutes = [
+    "/login",
+    "/register",
+    "/verify",
+    "/dashboard",
+    "/admin",
+    "/writer",
+    "/editor",
+    "/author",
+    "forgot-password",
+    "reset-password",
+    "verify-email",
+  ];
+
+  // Check if the current pathname starts with any of the hidden routes
+  // We use .startsWith() so it also hides on sub-pages (e.g., /dashboard/settings)
+  const shouldHideNavbar = hiddenRoutes.some((route) => pathname.startsWith(route));
+
+  // ==========================================
+  // SMART SCROLL: Hide down, Show up
   // ==========================================
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious();
@@ -21,11 +43,10 @@ export default function Navbar() {
     // Don't hide if the mobile menu is open
     if (isOpen) return;
 
-    // Hide navbar if scrolling down past 80px, show if scrolling up
     if (latest > previous && latest > 80) {
-      setIsHidden(true);
+      setIsHidden(true); // Scrolling down
     } else {
-      setIsHidden(false);
+      setIsHidden(false); // Scrolling up
     }
   });
 
@@ -36,24 +57,27 @@ export default function Navbar() {
     } else {
       document.body.style.overflow = "unset";
     }
-    
-    // Cleanup function
     return () => {
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
-  // Updated Navigation Links
+  // Expanded Navigation Links
   const navLinks = [
+    { name: "About", href: "/about" },
+    { name: "Services", href: "/services" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Projects", href: "/projects" },
     { name: "Blogs", href: "/blogs" },
   ];
 
+  // If we are on a hidden route, don't render the Navbar at all
+  if (shouldHideNavbar) return null;
+
   return (
     <>
       {/* ======================================= */}
-      {/* DESKTOP & MOBILE HEADER                   */}
+      {/* FULL WIDTH DESKTOP HEADER               */}
       {/* ======================================= */}
       <motion.header 
         variants={{
@@ -61,53 +85,57 @@ export default function Navbar() {
           hidden: { y: "-100%", opacity: 0 },
         }}
         animate={isHidden ? "hidden" : "visible"}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-zinc-200/50" 
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100"
       >
-        <div className="max-w-[1400px] mx-auto px-6 md:px-12 h-[80px] flex items-center justify-between">
+        <div className="w-full px-6 md:px-12 h-[80px] flex items-center justify-between max-w-[1600px] mx-auto">
           
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 z-50" onClick={() => setIsOpen(false)}>
+          <Link href="/" className="flex items-center gap-2 z-50" onClick={() => setIsOpen(false)}>
             <span className="text-[22px] font-extrabold text-black tracking-tight hover:opacity-70 transition-opacity duration-300">
-              Eklak
+              Eklak.
             </span>
           </Link>
 
-          {/* Desktop Navigation Links (Center) */}
-          <nav className="hidden lg:flex items-center gap-1">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-8 relative h-full">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link 
                   key={link.name} 
                   href={link.href}
-                  className={`relative px-4 py-2 text-[14px] font-medium rounded-full transition-all duration-300 ${
-                    isActive 
-                      ? "text-black bg-zinc-100/80" 
-                      : "text-zinc-500 hover:text-black hover:bg-zinc-50"
-                  }`}
+                  className="relative flex items-center h-full text-[14px] font-medium transition-colors duration-300 group"
                 >
-                  {link.name}
+                  <span className={`relative z-10 ${isActive ? "text-black" : "text-gray-500 group-hover:text-black"}`}>
+                    {link.name}
+                  </span>
+                  {/* Premium animated underline for active link */}
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-underline"
+                      className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-black"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* Desktop Actions (Right) - Zero Shadows */}
-          <div className="hidden lg:flex items-center gap-3">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Link 
-                href="/login" 
-                className="px-5 py-2.5 text-[14px] font-medium text-zinc-500 hover:text-black transition-colors duration-300"
-              >
-                Login
-              </Link>
-            </motion.div>
+          {/* Desktop Actions */}
+          <div className="hidden lg:flex items-center gap-5">
+            <Link 
+              href="/login" 
+              className="text-[14px] font-medium text-gray-500 hover:text-black transition-colors duration-300"
+            >
+              Login
+            </Link>
             
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Link 
                 href="/contact" 
-                className="px-6 py-2.5 bg-black text-white text-[14px] font-medium rounded-full hover:bg-zinc-800 transition-colors duration-300"
+                className="px-6 py-2.5 bg-black text-white text-[14px] font-medium rounded-xl hover:bg-gray-800 hover:shadow-md transition-all duration-300"
               >
                 Contact us
               </Link>
@@ -116,7 +144,7 @@ export default function Navbar() {
 
           {/* Mobile Hamburger Toggle */}
           <button 
-            className="lg:hidden z-50 text-zinc-900 p-2 -mr-2 rounded-full hover:bg-zinc-100 transition-colors focus:outline-none"
+            className="lg:hidden z-[60] text-black p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
@@ -124,7 +152,7 @@ export default function Navbar() {
               animate={{ rotate: isOpen ? 90 : 0 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              {isOpen ? <X size={24} strokeWidth={2} /> : <Menu size={24} strokeWidth={2} />}
+              {isOpen ? <X size={26} strokeWidth={2} /> : <Menu size={26} strokeWidth={2} />}
             </motion.div>
           </button>
 
@@ -137,27 +165,27 @@ export default function Navbar() {
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            initial={{ opacity: 0, y: -20, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -20, filter: "blur(10px)" }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-40 bg-white/95 backdrop-blur-xl pt-[100px] px-6 pb-8 flex flex-col lg:hidden overflow-y-auto"
+            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(20px)" }}
+            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 z-40 bg-white/95 pt-[100px] px-6 pb-8 flex flex-col lg:hidden overflow-y-auto"
           >
-            <nav className="flex flex-col gap-2 mt-4">
+            <nav className="flex flex-col gap-1 mt-4">
               {navLinks.map((link, i) => {
                 const isActive = pathname === link.href;
                 return (
                   <motion.div 
                     key={link.name}
-                    initial={{ opacity: 0, x: -30 }}
+                    initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.08 + 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: i * 0.08 + 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <Link 
                       href={link.href}
                       onClick={() => setIsOpen(false)}
-                      className={`text-3xl font-medium tracking-tight block py-4 border-b border-zinc-100 transition-colors ${
-                        isActive ? "text-black" : "text-zinc-400 hover:text-black"
+                      className={`text-[28px] font-semibold tracking-tight block py-4 border-b border-gray-100 transition-colors ${
+                        isActive ? "text-black" : "text-gray-400 hover:text-black"
                       }`}
                     >
                       {link.name}
@@ -167,24 +195,24 @@ export default function Navbar() {
               })}
             </nav>
 
-            {/* Mobile Buttons - Zero Shadows */}
+            {/* Mobile Buttons */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ delay: 0.5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="mt-auto pt-12 flex flex-col gap-3"
             >
               <Link 
                 href="/contact" 
                 onClick={() => setIsOpen(false)}
-                className="w-full py-4 bg-black text-white text-center text-[16px] font-medium rounded-[20px] active:scale-[0.98] transition-all"
+                className="w-full py-4 bg-black text-white text-center text-[16px] font-medium rounded-xl active:scale-[0.98] transition-all shadow-md"
               >
                 Contact us
               </Link>
               <Link 
                 href="/login" 
                 onClick={() => setIsOpen(false)}
-                className="w-full py-4 bg-zinc-100 text-black text-center text-[16px] font-medium rounded-[20px] active:scale-[0.98] transition-all"
+                className="w-full py-4 bg-gray-50 border border-gray-200 text-black text-center text-[16px] font-medium rounded-2xl active:scale-[0.98] transition-all"
               >
                 Login
               </Link>

@@ -2,151 +2,153 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ArrowUpRight } from "lucide-react";
 
 export default function Footer() {
-  // Cinematic, high-tension easing curve
-  const ease = [0.16, 1, 0.3, 1];
+  const pathname = usePathname();
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1, delayChildren: 0.2 },
-    },
-  };
+  // ==========================================
+  // HIDE FOOTER ON SPECIFIC ROUTES
+  // ==========================================
+  const hiddenRoutes = [
+    "/login",
+    "/register",
+    "/verify",
+    "/dashboard",
+    "/admin",
+    "/writer",
+    "/editor",
+    "/author",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
+  ];
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 40, filter: "blur(10px)" },
-    visible: {
-      opacity: 1,
-      y: 0,
-      filter: "blur(0px)",
-      transition: { duration: 1, ease },
-    },
-  };
+  const shouldHideFooter = hiddenRoutes.some((route) => pathname.startsWith(route));
+
+  if (shouldHideFooter) return null;
 
   return (
-    <footer className="relative w-full bg-[#050505] text-zinc-300 overflow-hidden pt-32 pb-8 border-t border-white/5 font-sans selection:bg-white selection:text-black">
-      
-      {/* Subtle background glow - pure white/gray for monochrome sleekness */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-white/5 blur-[120px] rounded-[100%] pointer-events-none -z-10 transform -translate-y-1/2"></div>
-
-      <div className="max-w-[1200px] w-full mx-auto px-6 md:px-12 relative z-10 flex flex-col">
+    <footer className="relative w-full bg-[#121212] text-white pt-24 pb-8 overflow-hidden selection:bg-white selection:text-[#121212]">
+      <div className="max-w-[1600px] mx-auto px-6 md:px-12">
         
         {/* ========================================
-            THE HERO CTA: Massive & Confident
+            TOP SECTION: Grid Layout
             ======================================== */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          className="flex flex-col items-center text-center pb-32 border-b border-white/5"
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-8 pb-24">
+          
+          {/* Left Column: CTA & Newsletter */}
+          <div className="lg:col-span-6 flex flex-col justify-between h-full">
+            <div>
+              <h3 className="text-4xl md:text-5xl font-medium tracking-tight text-white mb-6">
+                Got a project in mind?
+              </h3>
+              <Link 
+                href="/contact"
+                className="group inline-flex items-center gap-2 text-lg text-white pb-1 border-b border-white/40 hover:border-white transition-colors duration-300"
+              >
+                Let's make it happen 
+                <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+              </Link>
+            </div>
+
+            <div className="mt-16 lg:mt-32">
+              <p className="text-sm text-gray-300 mb-4 uppercase tracking-widest font-medium">Subscribe to insights</p>
+              <div className="relative max-w-sm flex items-center border-b border-white/30 pb-2 focus-within:border-white transition-colors duration-300">
+                <input 
+                  type="email" 
+                  placeholder="Enter your email address" 
+                  className="w-full bg-transparent outline-none text-white placeholder:text-gray-400 text-sm"
+                />
+                <button className="text-sm font-medium text-white hover:text-gray-300 transition-colors">
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Links */}
+          <div className="lg:col-span-5 lg:col-start-8 grid grid-cols-2 sm:grid-cols-3 gap-10">
+            <FooterColumn 
+              title="Menu"
+              links={[
+                { name: "Home", href: "/" },
+                { name: "About", href: "/about" },
+                { name: "Work", href: "/work" },
+                { name: "Services", href: "/services" },
+                { name: "Contact", href: "/contact" },
+              ]}
+            />
+            <FooterColumn 
+              title="Socials"
+              links={[
+                { name: "Twitter", href: "#" },
+                { name: "LinkedIn", href: "#" },
+                { name: "Instagram", href: "#" },
+                { name: "GitHub", href: "#" },
+              ]}
+            />
+            <FooterColumn 
+              title="Legal"
+              links={[
+                { name: "Privacy", href: "/privacy" },
+                { name: "Terms", href: "/terms" },
+                { name: "Imprint", href: "/imprint" },
+              ]}
+            />
+          </div>
+        </div>
+
+        {/* ========================================
+            MIDDLE SECTION: Location / Time
+            ======================================== */}
+        {/* <div className="flex flex-col md:flex-row justify-between items-center py-6 border-t border-white/20 text-sm text-[#FFFFFF]">
+          <div className="flex items-center gap-3 mb-4 md:mb-0 ">
+            <p>Based in Patna, India — Available Worldwide</p>
+          </div>
+          <div className="flex gap-6">
+            <p>© {new Date().getFullYear()} Eklak Alam</p>
+            <p>All Rights Reserved</p>
+          </div>
+        </div> */}
+
+      </div>
+
+      {/* ========================================
+          BOTTOM SECTION: Massive Brand Typography
+          ======================================== */}
+      <div className="w-full flex justify-center items-end leading-none mt-8 overflow-hidden select-none pointer-events-none">
+        <motion.h1 
+          initial={{ y: "20%", opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="text-[18vw] font-black text-white text-center tracking-tighter m-0 p-0 leading-[0.75]"
         >
-          <motion.div variants={itemVariants} className="mb-4">
-            <span className="px-3 py-1 rounded-full border border-white/10 text-[11px] uppercase tracking-widest text-zinc-400 font-medium">
-              Ready for deployment
-            </span>
-          </motion.div>
-          
-          <motion.h2 
-            variants={itemVariants} 
-            className="text-5xl md:text-7xl lg:text-[6rem] font-medium tracking-tighter text-white leading-[0.9] mb-8"
-          >
-            Let's build <br className="hidden md:block" />
-            <span className="text-zinc-600">the impossible.</span>
-          </motion.h2>
-
-          <motion.div variants={itemVariants}>
-            <Link
-              href="/contact"
-              className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-full font-medium text-[15px] hover:scale-105 transition-transform duration-500 ease-out"
-            >
-              Start a project
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
-            </Link>
-          </motion.div>
-        </motion.div>
-
-        {/* ========================================
-            THE GRID: Ultra-Clean Links
-            ======================================== */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-16">
-          
-          {/* Brand Col */}
-          <div className="col-span-2 md:col-span-1 flex flex-col">
-            <Link href="/" className="text-white font-bold text-2xl tracking-tighter mb-2">
-              Eklak.
-            </Link>
-            <p className="text-zinc-500 text-[13px] leading-relaxed max-w-[200px]">
-              Engineering digital experiences that operate at the edge of what's possible.
-            </p>
-          </div>
-
-          <ListCol 
-            title="Navigation" 
-            links={[
-              { name: "Home", href: "/" },
-              { name: "Work", href: "/work" },
-              { name: "About", href: "/about" },
-              { name: "Contact", href: "/contact" },
-            ]} 
-          />
-
-          <ListCol 
-            title="Socials" 
-            links={[
-              { name: "Twitter / X", href: "https://twitter.com" },
-              { name: "LinkedIn", href: "https://linkedin.com" },
-              { name: "GitHub", href: "https://github.com" },
-            ]} 
-          />
-
-          <ListCol 
-            title="Legal" 
-            links={[
-              { name: "Privacy Policy", href: "/privacy" },
-              { name: "Terms of Service", href: "/terms" },
-            ]} 
-          />
-
-        </div>
-
-        {/* ========================================
-            THE BOTTOM: Razor Sharp & Minimal
-            ======================================== */}
-        <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/5 gap-4">
-          <p className="text-[13px] text-zinc-600">
-            © {new Date().getFullYear()} Eklak Alam. All rights reserved.
-          </p>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-            <span className="text-[11px] uppercase tracking-widest text-zinc-500 font-medium">
-              Systems Normal
-            </span>
-          </div>
-        </div>
-
+          EKLAK.
+        </motion.h1>
       </div>
     </footer>
   );
 }
 
-/* Micro-component for the link lists */
-function ListCol({ title, links }) {
+/* Micro-component for clean link columns */
+function FooterColumn({ title, links }) {
   return (
-    <div className="flex flex-col gap-4">
-      <h4 className="text-[11px] uppercase tracking-widest text-zinc-600 font-semibold mb-2">
+    <div className="flex flex-col gap-5">
+      <h4 className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-2">
         {title}
       </h4>
       {links.map((link) => (
         <Link 
           key={link.name} 
           href={link.href}
-          className="text-[14px] text-zinc-400 hover:text-white transition-colors duration-300 w-fit"
+          className="group relative text-white w-fit text-sm md:text-base transition-colors hover:text-gray-300"
         >
           {link.name}
+          {/* Minimal underline hover effect */}
+          <span className="absolute left-0 -bottom-1 w-0 h-[1px] bg-white transition-all duration-300 ease-out group-hover:w-full"></span>
         </Link>
       ))}
     </div>

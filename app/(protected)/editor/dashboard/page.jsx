@@ -9,7 +9,7 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, ImagePlus, ArrowLeft, Send, Save, 
-  Bold, Italic, Heading2, Heading3, Quote, List, ListOrdered, Camera, X 
+  Bold, Italic, Heading2, Heading3, Quote, List, ListOrdered, Camera, X, ChevronDown
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -24,12 +24,12 @@ import { useGetPostBySlugQuery } from "@/hooks/queries/usePostQueries";
 import { useGetCategoriesQuery, useGetTagsQuery } from "@/hooks/queries/useCategoryQueries";
 import { useAuthStore } from "@/store/useAuthStore";
 
-// Cinematic easing curve
-const cinematicEase = [0.16, 1, 0.3, 1];
+// Fluid easing curve
+const fluidEase = [0.16, 1, 0.3, 1];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 1.2, ease: cinematicEase } }
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: fluidEase } }
 };
 
 // ==========================================
@@ -55,7 +55,7 @@ const TipTapEditor = ({ content, onChange }) => {
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-lg dark:prose-invert max-w-none focus:outline-none min-h-[60vh] text-[var(--color-foreground)] leading-relaxed prose-headings:font-normal prose-p:font-light prose-strong:font-medium',
+        class: 'prose prose-zinc prose-lg max-w-none focus:outline-none min-h-[60vh] text-zinc-800 leading-relaxed prose-headings:font-medium prose-p:font-light prose-a:text-zinc-900',
       },
     },
   });
@@ -68,22 +68,33 @@ const TipTapEditor = ({ content, onChange }) => {
 
   if (!editor) return null;
 
+  const ToolbarButton = ({ onClick, isActive, children }) => (
+    <button 
+      type="button" 
+      onClick={onClick} 
+      className={`p-2 rounded-xl transition-all outline-none flex items-center justify-center ${
+        isActive 
+          ? 'bg-zinc-900 text-white shadow-md shadow-zinc-900/10' 
+          : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
+      }`}
+    >
+      {children}
+    </button>
+  );
+
   return (
     <div className="w-full flex flex-col relative group">
-      {/* 
-        Sleek, Naked Formatting Toolbar (NO STICKY BEHAVIOR)
-        Naturally flows with the document structure.
-      */}
-      <div className="flex items-center gap-1.5 py-3 border-y border-[var(--color-border)]/30 mb-8 opacity-50 group-focus-within:opacity-100 hover:opacity-100 transition-opacity duration-700">
-        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('bold') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Bold className="w-4 h-4" strokeWidth={1.5} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('italic') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Italic className="w-4 h-4" strokeWidth={1.5} /></button>
-        <div className="w-px h-4 bg-[var(--color-border)]/50 mx-2" />
-        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('heading', { level: 2 }) ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Heading2 className="w-4 h-4" strokeWidth={1.5} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('heading', { level: 3 }) ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Heading3 className="w-4 h-4" strokeWidth={1.5} /></button>
-        <div className="w-px h-4 bg-[var(--color-border)]/50 mx-2" />
-        <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('blockquote') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><Quote className="w-4 h-4" strokeWidth={1.5} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('bulletList') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><List className="w-4 h-4" strokeWidth={1.5} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={`p-2 rounded-none transition-colors outline-none ${editor.isActive('orderedList') ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-muted)] hover:text-[var(--color-foreground)]'}`}><ListOrdered className="w-4 h-4" strokeWidth={1.5} /></button>
+      {/* Soft Floating Toolbar */}
+      <div className="sticky top-[100px] z-20 flex items-center gap-1 p-1.5 bg-white/80 backdrop-blur-md border border-zinc-200 rounded-2xl w-max mb-8 shadow-sm opacity-50 focus-within:opacity-100 hover:opacity-100 transition-opacity duration-300">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')}><Bold className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')}><Italic className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
+        <div className="w-px h-6 bg-zinc-200 mx-1" />
+        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })}><Heading2 className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} isActive={editor.isActive('heading', { level: 3 })}><Heading3 className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
+        <div className="w-px h-6 bg-zinc-200 mx-1" />
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')}><Quote className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')}><List className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')}><ListOrdered className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
       </div>
       
       {/* Editor Canvas */}
@@ -97,6 +108,18 @@ const TipTapEditor = ({ content, onChange }) => {
 // ==========================================
 // 3. MAIN EDITOR INTERFACE
 // ==========================================
+export default function EditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-[100dvh] bg-white flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
+      </div>
+    }>
+      <EditorFormContent />
+    </Suspense>
+  );
+}
+
 function EditorFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -127,7 +150,7 @@ function EditorFormContent() {
     if (isInitialized) {
       if (!isAuthenticated) router.push("/login");
       else if (user?.role === "USER") {
-        toast.error("Access denied. Unauthorized entity.");
+        toast.error("Access denied.");
         router.push("/dashboard");
       }
     }
@@ -147,7 +170,7 @@ function EditorFormContent() {
       
       // Ownership Guard
       if (existingPost.authorId !== user?.id && user?.role !== 'ADMIN' && user?.role !== 'AUTHOR') {
-        toast.error("Permission denied. You cannot modify this record.");
+        toast.error("Permission denied.");
         router.push("/writer/dashboard");
       }
     }
@@ -169,7 +192,7 @@ function EditorFormContent() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop, accept: { 'image/*': [] }, maxFiles: 1, maxSize: 10 * 1024 * 1024,
-    onDropRejected: () => toast.error("File rejected. Make sure it is a valid image under 10MB.")
+    onDropRejected: () => toast.error("File rejected. Must be a valid image under 10MB.")
   });
 
   const toggleTag = (tagId) => {
@@ -179,21 +202,19 @@ function EditorFormContent() {
   const onSubmit = (status) => (data) => {
     const payload = { ...data, status: status, coverImage: coverImageBase64, tags: selectedTags };
     
-    // Clean up empty strings that fail backend Zod .min(1) validation
-    if (!payload.categoryId) {
-      payload.categoryId = null;
-    }
+    if (!payload.categoryId) payload.categoryId = null;
+
     if (existingPost) {
       updatePost({ id: existingPost.id, payload }, {
         onSuccess: () => {
-          toast.success(`Record updated successfully.`);
+          toast.success("Post updated successfully.");
           router.push('/writer/dashboard');
         }
       });
     } else {
       createPost(payload, {
         onSuccess: () => {
-          toast.success(`Record ${status === "PUBLISHED" ? "published" : "saved"} successfully.`);
+          toast.success(`Post ${status === "PUBLISHED" ? "published" : "saved"} successfully.`);
           router.push('/writer/dashboard');
         }
       });
@@ -204,65 +225,60 @@ function EditorFormContent() {
   const tags = tagResponse?.data?.tags || tagResponse?.tags || tagResponse?.data || [];
 
   if (!isInitialized || (editSlug && postLoading)) {
-    return <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} /></div>;
+    return (
+      <div className="h-[100dvh] bg-white flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
-    // pt-32 ensures this entire layout sits cleanly under your custom global navbar
-    <div className="min-h-screen bg-[var(--color-background)] relative selection:bg-[var(--color-brand-primary)]/30 pt-32 pb-24">
+    <div className="min-h-screen bg-white text-zinc-900 relative selection:bg-zinc-200 pt-3 pb-24">
       
-      {/* Minimal Background Stylings */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden h-[30vh]">
-        <div 
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)`,
-            backgroundSize: "4rem 4rem",
-            maskImage: "radial-gradient(ellipse 100% 100% at 50% 0%, black 20%, transparent 80%)",
-            WebkitMaskImage: "radial-gradient(ellipse 100% 100% at 50% 0%, black 20%, transparent 80%)",
-          }}
-        />
-      </div>
-
       {/* ======================================= */}
       {/* MAIN WORKSPACE GRID                       */}
       {/* ======================================= */}
       <div className="relative z-10 max-w-[1300px] mx-auto px-6 py-4 md:py-8">
         
-        {/* Top Minimal Info Bar (Natural Flow, Not Sticky) */}
+        {/* Top Minimal Info Bar */}
         <motion.div 
           initial="hidden" animate="visible" variants={fadeUp}
-          className="flex items-center justify-between border-b border-[var(--color-border)]/40 pb-6 mb-16"
+          className="flex items-center justify-between pb-6 mb-12"
         >
-          <Link href="/writer/dashboard" className="group flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--color-muted)] hover:text-[var(--color-foreground)] transition-colors duration-500 outline-none">
-            <ArrowLeft className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:-translate-x-1 transition-all duration-500" strokeWidth={1.5} />
-            Return to Hub
+          <Link 
+            href="/writer/dashboard" 
+            className="group flex items-center gap-2 text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-colors duration-300 outline-none bg-zinc-50 hover:bg-zinc-100 px-4 py-2 rounded-full"
+          >
+            <ArrowLeft className="w-4 h-4 opacity-70 group-hover:-translate-x-0.5 transition-all duration-300" strokeWidth={2} />
+            Back to Dashboard
           </Link>
-          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--color-brand-primary)]">
-            [{existingPost ? "Edit Module" : "Initialization Module"}]
+          <span className="text-[12px] font-medium text-zinc-400 bg-zinc-50 px-3 py-1 rounded-full">
+            {existingPost ? "Editing Post" : "New Draft"}
           </span>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
           
           {/* ======================================= */}
           {/* LEFT: THE WRITING CANVAS                  */}
           {/* ======================================= */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: cinematicEase }}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: fluidEase }}
             className="lg:col-span-8 flex flex-col"
           >
-            {/* Title Input: Architectural Separator */}
-            <div className="mb-4 pb-8 border-b border-[var(--color-border)]/20">
+            {/* Soft Title Input */}
+            <div className="mb-8">
               <input 
                 type="text" 
-                placeholder="Architectural Title."
+                placeholder="Story Title..."
                 {...register("title")}
-                className="w-full text-4xl md:text-5xl lg:text-[4rem] font-normal bg-transparent border-none outline-none text-[var(--color-foreground)] placeholder-[var(--color-muted)]/30 tracking-tight leading-[1.05]"
+                className="w-full text-4xl md:text-5xl lg:text-6xl font-medium bg-transparent border-none outline-none text-zinc-900 placeholder-zinc-300 tracking-tight leading-[1.1] py-2"
               />
               <AnimatePresence>
                 {errors.title && (
-                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-[11px] mt-4 font-medium uppercase tracking-widest">{errors.title.message}</motion.p>
+                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-sm mt-2 font-medium">
+                    {errors.title.message}
+                  </motion.p>
                 )}
               </AnimatePresence>
             </div>
@@ -277,7 +293,9 @@ function EditorFormContent() {
               />
               <AnimatePresence>
                 {errors.content && (
-                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-[11px] mt-4 font-medium uppercase tracking-widest">{errors.content.message}</motion.p>
+                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-sm mt-4 font-medium">
+                    {errors.content.message}
+                  </motion.p>
                 )}
               </AnimatePresence>
             </div>
@@ -287,46 +305,46 @@ function EditorFormContent() {
           {/* RIGHT: THE META SETTINGS PANEL            */}
           {/* ======================================= */}
           <motion.div 
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1.2, ease: cinematicEase, delay: 0.2 }}
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: fluidEase, delay: 0.1 }}
             className="lg:col-span-4"
           >
-            {/* Natural flow, NOT STICKY */}
-            <div className="space-y-12 pb-12">
+            <div className="space-y-8 sticky top-[100px]">
               
-              <div className="border-b border-[var(--color-border)]/40 pb-4 mb-8">
-                <h3 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)] flex items-center justify-between">
-                  Parameters
-                  <span className="w-1.5 h-1.5 rounded-none bg-[var(--color-brand-accent)] animate-pulse"></span>
-                </h3>
-              </div>
+              <h3 className="text-sm font-semibold text-zinc-900 mb-6">
+                Post Settings
+              </h3>
 
               {/* 1. Cover Image Upload */}
               <div>
-                <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-4 block">Visual Asset</label>
+                <label className="text-xs font-medium text-zinc-500 mb-3 block">Cover Image</label>
                 <div 
                   {...getRootProps()} 
-                  className={`relative border rounded-none text-center cursor-pointer transition-colors duration-700 overflow-hidden group ${isDragActive ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/5' : 'border-[var(--color-border)]/50 hover:border-[var(--color-foreground)]/30 bg-transparent'} ${coverImageBase64 ? 'border-transparent p-0 aspect-[4/3]' : 'p-10'}`}
+                  className={`relative border-2 rounded-[24px] text-center cursor-pointer transition-all duration-300 overflow-hidden group ${
+                    isDragActive ? 'border-zinc-400 bg-zinc-100' : 'border-dashed border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100/50'
+                  } ${coverImageBase64 ? 'border-solid border-transparent p-0 aspect-video' : 'p-10 aspect-video flex items-center justify-center'}`}
                 >
                   <input {...getInputProps()} />
                   {coverImageBase64 ? (
                     <div className="w-full h-full relative">
-                      <img src={coverImageBase64} alt="Preview" className="w-full h-full object-cover filter grayscale-[20%]" />
-                      <div className="absolute inset-0 bg-[var(--color-background)]/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
-                        <span className="text-[10px] font-medium text-[var(--color-foreground)] uppercase tracking-widest flex items-center gap-2"><Camera className="w-3.5 h-3.5" strokeWidth={1.5} /> Modify Asset</span>
+                      <img src={coverImageBase64} alt="Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-white/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
+                        <span className="text-xs font-semibold text-zinc-900 flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
+                          <Camera className="w-4 h-4" /> Change Image
+                        </span>
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setCoverImageBase64(null); }}
-                          className="text-[10px] font-medium text-red-400 uppercase tracking-widest hover:underline flex items-center gap-1.5 outline-none"
+                          className="text-xs font-medium text-red-600 hover:bg-red-50 px-4 py-2 rounded-full transition-colors flex items-center gap-1.5 outline-none"
                         >
-                          <X className="w-3.5 h-3.5" strokeWidth={1.5} /> Purge
+                          <X className="w-3.5 h-3.5" /> Remove
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-[var(--color-muted)]">
-                      <ImagePlus className="w-6 h-6 mb-4 opacity-50" strokeWidth={1.5} />
-                      <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--color-foreground)] mb-2">Drop Asset Here</p>
-                      <p className="text-[9px] font-mono tracking-widest uppercase opacity-50">PNG, JPG, WEBP (Max 5MB)</p>
+                    <div className="flex flex-col items-center justify-center text-zinc-400 group-hover:text-zinc-600 transition-colors">
+                      <ImagePlus className="w-6 h-6 mb-3" strokeWidth={1.5} />
+                      <p className="text-sm font-medium mb-1">Click or drag image</p>
+                      <p className="text-[11px] font-medium opacity-60">PNG, JPG, WEBP (Max 10MB)</p>
                     </div>
                   )}
                 </div>
@@ -334,40 +352,40 @@ function EditorFormContent() {
 
               {/* 2. Excerpt */}
               <div>
-                <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] mb-4 block">Summary Directive</label>
+                <label className="text-xs font-medium text-zinc-500 mb-3 block">Short Excerpt</label>
                 <textarea 
-                  {...register("excerpt")} rows="4"
-                  className="w-full bg-transparent border border-[var(--color-border)]/50 rounded-none px-4 py-4 text-[13px] font-light text-[var(--color-foreground)] outline-none focus:border-[var(--color-brand-accent)] transition-colors duration-700 resize-none placeholder-[var(--color-muted)]/50"
-                  placeholder="Define a brief summary for the index..."
+                  {...register("excerpt")} rows="3"
+                  className="w-full bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200 rounded-[20px] px-5 py-4 text-sm text-zinc-900 outline-none focus:bg-white focus:border-zinc-400 focus:ring-[4px] focus:ring-zinc-100 transition-all duration-300 resize-none placeholder-zinc-400"
+                  placeholder="A brief summary for the blog feed..."
                 />
                 <AnimatePresence>
-                  {errors.excerpt && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-[10px] mt-2 font-medium uppercase tracking-widest">{errors.excerpt.message}</motion.p>}
+                  {errors.excerpt && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-xs mt-2 font-medium">{errors.excerpt.message}</motion.p>}
                 </AnimatePresence>
               </div>
 
               {/* 3. Category */}
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] block">Primary Module</label>
-                  {catsLoading && <Loader2 className="w-3 h-3 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} />}
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-xs font-medium text-zinc-500 block">Category</label>
+                  {catsLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-400" />}
                 </div>
                 <div className="relative">
                   <select 
                     {...register("categoryId")}
-                    className="w-full appearance-none bg-transparent border border-[var(--color-border)]/50 rounded-none px-4 py-3.5 text-[13px] font-light text-[var(--color-foreground)] outline-none focus:border-[var(--color-brand-accent)] transition-colors duration-700 cursor-pointer"
+                    className="w-full appearance-none bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200 rounded-[20px] px-5 py-4 text-sm text-zinc-900 outline-none focus:bg-white focus:border-zinc-400 focus:ring-[4px] focus:ring-zinc-100 transition-all duration-300 cursor-pointer"
                   >
-                    <option value="" className="text-[var(--color-background)]">Select module assignment...</option>
-                    {categories?.map(cat => <option key={cat.id} value={cat.id} className="text-[var(--color-background)]">{cat.name}</option>)}
+                    <option value="">Select a category...</option>
+                    {categories?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                   </select>
-                  <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--color-muted)] pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
                 </div>
               </div>
 
               {/* 4. Tags */}
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <label className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-[0.2em] block">Index Tags</label>
-                  {tagsLoading && <Loader2 className="w-3 h-3 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} />}
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-xs font-medium text-zinc-500 block">Tags</label>
+                  {tagsLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-400" />}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {tags?.map(tag => {
@@ -375,10 +393,10 @@ function EditorFormContent() {
                     return (
                       <button
                         key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
-                        className={`px-3 py-1.5 rounded-none text-[10px] font-medium uppercase tracking-[0.1em] border transition-colors duration-500 cursor-pointer outline-none ${
+                        className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer outline-none ${
                           isSelected 
-                            ? 'bg-[var(--color-foreground)] border-[var(--color-foreground)] text-[var(--color-background)]' 
-                            : 'bg-transparent border-[var(--color-border)]/50 text-[var(--color-muted)] hover:border-[var(--color-foreground)]/40 hover:text-[var(--color-foreground)]'
+                            ? 'bg-zinc-900 text-white shadow-md shadow-zinc-900/10' 
+                            : 'bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200/60'
                         }`}
                       >
                         {tag.name}
@@ -389,30 +407,27 @@ function EditorFormContent() {
               </div>
 
               {/* ======================================= */}
-              {/* ACTION / PUBLISHING MODULE (Rounded)      */}
+              {/* PUBLISHING ACTIONS                        */}
               {/* ======================================= */}
-              <div className="pt-12 mt-12 border-t border-[var(--color-border)]/40">
-                <h3 className="text-[12px] font-medium uppercase tracking-[0.2em] text-[var(--color-foreground)] mb-6">
-                  Execution Protocol
-                </h3>
-                <div className="flex flex-col gap-4">
+              <div className="pt-6 mt-6 border-t border-zinc-100">
+                <div className="flex flex-col gap-3">
                   
                   <button 
                     onClick={handleSubmit(onSubmit("PUBLISHED"))}
                     disabled={isPending || user?.role === 'WRITER'}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-[var(--color-foreground)] text-[var(--color-background)] rounded-full text-[12px] font-medium uppercase tracking-[0.15em] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-30 outline-none"
-                    title={user?.role === 'WRITER' ? "Authorization restricted. Save as draft." : ""}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-900 text-white rounded-full text-[14px] font-semibold hover:bg-zinc-800 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none shadow-lg shadow-zinc-900/15"
+                    title={user?.role === 'WRITER' ? "Writers can only save drafts." : ""}
                   >
-                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : <Send className="w-4 h-4" strokeWidth={1.5} />}
-                    {user?.role === 'WRITER' ? 'Restricted' : 'Publish Protocol'}
+                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {user?.role === 'WRITER' ? 'Publishing Restricted' : 'Publish Post'}
                   </button>
                   
                   <button 
                     onClick={handleSubmit(onSubmit("DRAFT"))}
                     disabled={isPending}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-transparent text-[var(--color-foreground)] border border-[var(--color-border)]/50 rounded-full text-[12px] font-medium uppercase tracking-[0.15em] hover:border-[var(--color-foreground)] active:scale-[0.98] transition-all disabled:opacity-30 outline-none"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-50 text-zinc-900 hover:bg-zinc-100 rounded-full text-[14px] font-medium active:scale-[0.98] transition-all disabled:opacity-50 outline-none"
                   >
-                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} /> : <Save className="w-4 h-4 opacity-50" strokeWidth={1.5} />}
+                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-zinc-500" />}
                     Save as Draft
                   </button>
 
@@ -425,13 +440,5 @@ function EditorFormContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function EditorPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted)]" strokeWidth={1.5} /></div>}>
-      <EditorFormContent />
-    </Suspense>
   );
 }
