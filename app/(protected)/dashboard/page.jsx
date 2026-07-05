@@ -143,7 +143,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen w-full relative bg-[#f2f2f2] text-zinc-900 selection:bg-zinc-300 pt-12 pb-24 px-4 sm:px-6">
+    <div className="min-h-screen w-full relative bg-[#f2f2f2] text-zinc-900 pt-12 pb-24 px-4 sm:px-6">
       
       <div className="relative z-10 max-w-[1200px] mx-auto w-full">
         

@@ -233,7 +233,7 @@ function EditorFormContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 relative selection:bg-zinc-200 pt-3 pb-24">
+    <div className="min-h-screen bg-white text-zinc-900 relative pt-3 pb-24">
       
       {/* ======================================= */}
       {/* MAIN WORKSPACE GRID                       */}

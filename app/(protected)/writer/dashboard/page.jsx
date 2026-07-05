@@ -87,7 +87,7 @@ export default function WriterHubPage() {
 
   return (
     // MAIN WRAPPER: Removed the top padding, full viewport height
-    <div className="min-h-[100dvh] bg-[#f2f2f2] flex flex-col md:flex-row selection:bg-black selection:text-[#f2f2f2]">
+    <div className="min-h-[100dvh] bg-[#f2f2f2] flex flex-col md:flex-row">
       
       {/* ======================================= */}
       {/* DESKTOP SIDEBAR                         */}

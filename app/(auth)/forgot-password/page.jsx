@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#FFFFFF] flex flex-col justify-center items-center px-6 py-20 selection:bg-black selection:text-[#f2f2f2]">
+    <div className="min-h-[100dvh] w-full bg-[#FFFFFF] flex flex-col justify-center items-center px-6 py-20">
       
       <motion.div 
         variants={containerVariants}

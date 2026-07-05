@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  /* 1. CORE PALETTE (Refined for World-Class Contrast) */
-  --color-brand-bg: #f2f2f2;                  /* The perfect neutral canvas */
-  --color-brand-surface: rgb(237, 241, 214);  /* #EDF1D6 - Promoted to Surface/Cards */
-  --color-brand-light: rgb(157, 192, 139);    /* #9DC08B */
-  --color-brand-primary: rgb(96, 153, 102);   /* #609966 */
-  --color-brand-dark: rgb(64, 81, 59);        /* #40513B */
-  --color-brand-darker: rgb(38, 48, 35);      /* Added: For maximum text readability */
-  --color-brand-accent: #e8751a;              /* God Mode Orange */
-  --color-brand-accent-hover: #ff8e36;        /* Added: Lighter orange for hover states */
+  /* 1. CORE PALETTE (Refined Ultra-Minimalist) */
+  --color-brand-bg: #FCFCFC;          /* Just a touch brighter for a cleaner paper-like feel */
+  --color-brand-surface: #F4F4F5;     /* Zinc 100 - Soft contrast for cards/surfaces */
+  --color-brand-light: #E4E4E7;       /* Zinc 200 - Subtle dividers and selection bg */
+  --color-brand-primary: #18181B;     /* Zinc 900 - Deep, rich almost-black */
+  --color-brand-dark: #27272A;        /* Zinc 800 - Secondary dark elements */
+  --color-brand-darker: #09090B;      /* Zinc 950 - Maximum contrast for headings */
+  --color-brand-accent: #111111;      /* Monochromatic accent for a premium feel */
+  --color-brand-accent-hover: #52525B;/* Zinc 600 for smooth hover states */
 
   /* 2. SEMANTIC UI MAPPING */
   --color-background: var(--color-brand-bg);
   --color-surface: var(--color-brand-surface);
-  --color-border: color-mix(in srgb, var(--color-brand-dark) 15%, transparent); /* Ultra-smooth borders */
+  --color-border: var(--color-brand-light); 
   
   --color-foreground: var(--color-brand-darker);
-  --color-muted: color-mix(in srgb, var(--color-brand-darker) 75%, transparent);
+  --color-muted: #52525B; /* Zinc 600 - Darkened slightly from 500 for better long-form reading accessibility */
   
   --color-primary: var(--color-brand-primary);
   --color-primary-hover: var(--color-brand-dark);
-  --color-primary-text: var(--color-brand-bg);
-  --color-ring: color-mix(in srgb, var(--color-brand-primary) 50%, transparent);
+  --color-primary-text: #FFFFFF;
+  --color-ring: color-mix(in srgb, var(--color-brand-primary) 20%, transparent);
   
   --color-accent: var(--color-brand-accent);
 }
@@ -44,15 +44,14 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
-    /* subtle texture/noise could go here for extra premium feel */
   }
 
   /* TYPOGRAPHY: Editorial Hierarchy */
   h1, h2, h3, h4, h5, h6 {
     color: var(--color-foreground);
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -0.03em;
-    text-wrap: balance; /* Prevents awkward single-word lines on headings */
+    text-wrap: balance; 
   }
 
   p {
@@ -62,13 +61,14 @@
 
   /* MICRO-INTERACTIONS: Highlight & Selection */
   ::selection {
-    background-color: var(--color-brand-accent);
-    color: var(--color-brand-bg);
+    /* Man, this is the fix right here. Soft silver bg with crisp dark text */
+    background-color: var(--color-brand-light); 
+    color: var(--color-brand-darker);
   }
 
   /* MINIMALIST SCROLLBAR */
   ::-webkit-scrollbar {
-    width: 8px; /* Slightly thicker than 6px for usability, still elegant */
+    width: 6px; 
   }
 
   ::-webkit-scrollbar-track {
@@ -76,14 +76,13 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--color-brand-light) 60%, transparent);
+    background: var(--color-brand-light);
     border-radius: 9999px;
-    border: 2px solid var(--color-background); /* Creates a padded look */
     transition: background 0.3s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-brand-primary);
+    background: var(--color-muted);
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -100,16 +99,15 @@
 /* ========================================= */
 @layer components {
   .blog-content {
-    /* Fluid typography constraint for optimal reading width (approx 65 chars) */
     @apply max-w-[70ch] mx-auto text-lg md:text-[1.125rem] text-[var(--color-muted)] leading-[1.85];
   }
   
   .blog-content h2 {
-    @apply text-3xl md:text-4xl font-extrabold mt-16 mb-6 text-[var(--color-foreground)];
+    @apply text-3xl md:text-4xl font-bold mt-16 mb-6 text-[var(--color-foreground)] tracking-tight;
   }
   
   .blog-content h3 {
-    @apply text-2xl md:text-3xl font-bold mt-10 mb-4 text-[var(--color-foreground)];
+    @apply text-2xl md:text-3xl font-semibold mt-10 mb-4 text-[var(--color-foreground)] tracking-tight;
   }
 
   .blog-content p {
@@ -117,32 +115,30 @@
   }
 
   .blog-content a {
-    @apply text-[var(--color-brand-accent)] font-semibold underline decoration-2 decoration-[var(--color-brand-accent)]/30 underline-offset-4 transition-all duration-200 hover:decoration-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)];
+    @apply text-[var(--color-foreground)] font-medium underline decoration-1 decoration-[var(--color-brand-light)] underline-offset-4 transition-all duration-300 hover:decoration-[var(--color-foreground)];
   }
 
   .blog-content blockquote {
-    @apply border-l-4 border-[var(--color-brand-accent)] pl-6 py-2 my-10 italic text-[var(--color-foreground)] font-medium bg-[var(--color-surface)]/60 rounded-r-xl shadow-sm;
+    @apply border-l-2 border-[var(--color-foreground)] pl-6 py-2 my-10 text-[var(--color-foreground)] text-xl font-medium bg-transparent;
   }
 
-  /* Code blocks should pop against the #f2f2f2 background */
   .blog-content pre {
-    @apply bg-[var(--color-foreground)] text-[var(--color-brand-surface)] p-5 rounded-xl overflow-x-auto my-10 text-[0.9em] shadow-lg border border-[var(--color-brand-dark)]/20;
+    @apply bg-[var(--color-foreground)] text-[var(--color-brand-surface)] p-6 rounded-xl overflow-x-auto my-10 text-[0.9em] shadow-sm;
   }
   
   .blog-content code {
-    @apply font-mono text-[0.85em] bg-[var(--color-border)]/50 px-1.5 py-0.5 rounded-md text-[var(--color-brand-darker)];
+    @apply font-mono text-[0.85em] bg-[var(--color-brand-surface)] px-1.5 py-0.5 rounded text-[var(--color-foreground)];
   }
   
   .blog-content pre code {
     @apply bg-transparent px-0 py-0 text-inherit border-none shadow-none;
   }
   
-  /* Added: Beautiful list styling for blog posts */
   .blog-content ul {
-    @apply list-disc pl-6 mb-7 space-y-2 marker:text-[var(--color-brand-primary)];
+    @apply list-disc pl-6 mb-7 space-y-3 marker:text-[var(--color-brand-light)];
   }
   
   .blog-content ol {
-    @apply list-decimal pl-6 mb-7 space-y-2 marker:text-[var(--color-brand-accent)] marker:font-bold;
+    @apply list-decimal pl-6 mb-7 space-y-3 marker:text-[var(--color-muted)];
   }
 }

@@ -1,45 +1,50 @@
+// app/blog/[slug]/layout.jsx
+
 export async function generateMetadata({ params }) {
-  // Resolve params for Next.js 15 App Router standard
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
   const baseUrl = 'https://eklak.site';
   
+  // Using your environment variable here!
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/posts/${slug}`;
+  
   try {
-    // Fetch directly from the backend API for Server-Side SEO generation
-    const res = await fetch(`http://localhost:8000/api/v1/posts/${slug}`, { 
-      next: { revalidate: 60 } // Revalidate every 60 seconds
+    const res = await fetch(apiUrl, { 
+      next: { revalidate: 60 } 
     });
     
-    if (!res.ok) return { title: '404 - Post Not Found' };
+    if (!res.ok) {
+      console.error(`[SEO] API failed with status: ${res.status}`);
+      return { title: '404 - Post Not Found' };
+    }
     
     const data = await res.json();
-    const post = data?.data?.post || data?.post;
-    
-    if (!post) return { title: '404 - Post Not Found' };
+    console.log(`[SEO] Full Backend Response:`, JSON.stringify(data).substring(0, 200));
 
-    // Dynamically extract keywords if tags exist
+    // Aggressive fallback to find the post object
+    // It checks data.data.post, data.post, data.data, or assumes 'data' is the post itself
+    const post = data?.data?.post || data?.post || data?.data || (data?.title ? data : null);
+    
+    if (!post) {
+      console.error(`[SEO] Post object still undefined! Look at the terminal log above to see your JSON structure.`);
+      return { title: '404 - Post Not Found' };
+    }
+
     const keywords = post.tags ? post.tags.map(tag => tag.name).join(', ') : 'Software Engineering, Full Stack, DevOps, AWS, Next.js';
-    const postUrl = post.canonicalUrl || `${baseUrl}/blog/${post.slug}`;
+    const postUrl = post.canonicalUrl || `${baseUrl}/blog/${post.slug || slug}`;
 
     return {
       title: post.metaTitle || post.title,
       description: post.metaDescription || post.excerpt,
       keywords: keywords,
-      alternates: {
-        canonical: postUrl,
-      },
+      alternates: { canonical: postUrl },
       openGraph: {
         title: post.metaTitle || post.title,
         description: post.metaDescription || post.excerpt,
         url: postUrl,
         siteName: 'Eklak Alam',
         images: post.coverImage ? [
-          {
-            url: post.coverImage,
-            width: 1200,
-            height: 630,
-            alt: post.title,
-          }
+          { url: post.coverImage, width: 1200, height: 630, alt: post.title }
         ] : [],
         type: 'article',
         publishedTime: post.publishedAt || post.createdAt,
@@ -51,14 +56,14 @@ export async function generateMetadata({ params }) {
         title: post.metaTitle || post.title,
         description: post.metaDescription || post.excerpt,
         images: post.coverImage ? [post.coverImage] : [],
-        creator: '@your_twitter_handle', // Update with your X handle
+        creator: '@your_twitter_handle', 
       },
     };
   } catch (error) {
-    console.error("SEO Metadata Error:", error);
+    console.error("[SEO] Fetch Error:", error.message);
     return {
       title: 'Engineering Blog',
-      description: 'Read the latest system architecture and engineering insights by Eklak Alam.',
+      description: 'Read the latest system architecture and engineering insights.',
     };
   }
 }
@@ -67,20 +72,24 @@ export default async function BlogPostLayout({ children, params }) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
   const baseUrl = 'https://eklak.site';
+  
+  // Using your environment variable here too!
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/posts/${slug}`;
 
   let jsonLd = null;
 
   try {
-    const res = await fetch(`http://localhost:8000/api/v1/posts/${slug}`, { 
+    const res = await fetch(apiUrl, { 
       next: { revalidate: 60 } 
     });
     
     if (res.ok) {
       const data = await res.json();
-      const post = data?.data?.post || data?.post;
+      
+      // Using the same aggressive extraction for the schema
+      const post = data?.data?.post || data?.post || data?.data || (data?.title ? data : null);
       
       if (post) {
-        // High-level Schema.org generation for rich Google Snippets
         jsonLd = {
           '@context': 'https://schema.org',
           '@type': 'BlogPosting',
@@ -89,34 +98,26 @@ export default async function BlogPostLayout({ children, params }) {
           image: post.coverImage ? [post.coverImage] : [],
           datePublished: post.publishedAt || post.createdAt,
           dateModified: post.updatedAt || post.createdAt,
-          author: {
-            '@type': 'Person',
-            name: 'Eklak Alam',
-            url: baseUrl,
-          },
+          author: { '@type': 'Person', name: 'Eklak Alam', url: baseUrl },
           publisher: {
             '@type': 'Person',
             name: 'Eklak Alam',
             url: baseUrl,
-            image: {
-              '@type': 'ImageObject',
-              url: `${baseUrl}/og-image.jpg`, // Ensure this image exists in your public folder
-            },
+            image: { '@type': 'ImageObject', url: `${baseUrl}/og-image.jpg` },
           },
           mainEntityOfPage: {
             '@type': 'WebPage',
-            '@id': post.canonicalUrl || `${baseUrl}/blog/${post.slug}`,
+            '@id': post.canonicalUrl || `${baseUrl}/blog/${post.slug || slug}`,
           },
         };
       }
     }
   } catch (err) {
-    // Silently ignore, the generateMetadata function already logs the error
+    // Silently ignore here
   }
 
   return (
     <>
-      {/* Injecting JSON-LD safely into the DOM */}
       {jsonLd && (
         <script
           type="application/ld+json"

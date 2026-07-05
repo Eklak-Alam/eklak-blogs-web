@@ -88,7 +88,7 @@ function BlogFeedContent() {
 
   return (
     // Beautiful, clean layout 
-    <div className="min-h-screen bg-[#FFFFFF] text-zinc-900 relative pt-32 pb-24 px-6 font-sans selection:bg-zinc-200">
+    <div className="min-h-screen bg-[#FFFFFF] text-zinc-900 relative pt-32 pb-24 px-6 font-san">
       
       <div className="max-w-[1200px] mx-auto">
         

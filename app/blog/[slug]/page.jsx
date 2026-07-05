@@ -175,7 +175,7 @@ export default function PostReadingPage() {
   if (postError || !post) return null;
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 relative selection:bg-blue-500/30 font-sans">
+    <div className="min-h-screen bg-white text-slate-900 relative font-sans">
       
       {/* ======================================== */}
       {/* 1. EDITORIAL HEADER & HERO               */}

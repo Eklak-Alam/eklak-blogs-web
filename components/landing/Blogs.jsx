@@ -2,18 +2,30 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
-import { Search, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { Search, ArrowLeft, ArrowRight } from "lucide-react";
 import { useGetPublishedPostsQuery } from "@/hooks/queries/usePostQueries";
+
+// Extracted animation variants to prevent re-creation on every render
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (index) => ({
+    opacity: 1, 
+    y: 0, 
+    // Modulo 9 ensures the stagger delay resets perfectly on each page
+    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: (index % 9) * 0.08 } 
+  })
+};
 
 export default function Blogs() {
   // 1. Pagination State
   const [page, setPage] = useState(1);
 
-  // 2. Fetch Posts (Using real API with page state)
+  // 2. Fetch Posts 
   const { data: response, isLoading, isFetching } = useGetPublishedPostsQuery({
     page,
-    limit: 9, // 9 items fits perfectly in a 3-column grid (3x3)
+    limit: 9, 
     sort: "-publishedAt",
   });
 
@@ -25,10 +37,12 @@ export default function Blogs() {
     if (newPage < 1 || newPage > pagination.totalPages) return;
     setPage(newPage);
     
-    // Smoothly scroll back to the "Browse all" header
+    // Smoothly scroll back to the header
     const element = document.getElementById("browse-all");
     if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Offset slightly so the header isn't flush against the absolute top of the screen
+      const y = element.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: y, behavior: "smooth" });
     }
   };
 
@@ -39,53 +53,54 @@ export default function Blogs() {
       month: 'short', 
       day: '2-digit', 
       year: 'numeric' 
-    }).toUpperCase(); // Force uppercase to match your design
-  };
-
-  // Cinematic fluid easing for load-in
-  const fadeUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (index) => ({
-      opacity: 1, 
-      y: 0, 
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: index * 0.05 } 
-    })
+    }).toUpperCase();
   };
 
   return (
-    <section id="browse-all" className="w-full bg-[#FAFAFA] text-zinc-900 font-sans py-24 px-6 md:px-12 selection:bg-zinc-200 min-h-screen">
-      <div className="max-w-[1400px] mx-auto w-full flex flex-col gap-9">
+    <section id="browse-all" className="w-full bg-[#FAFAFA] text-zinc-900 font-sans py-16 md:py-24 px-4 sm:px-6 md:px-12 min-h-screen">
+      <div className="max-w-[1400px] mx-auto w-full flex flex-col gap-8 md:gap-10">
         
         {/* ======================================= */}
         {/* HEADER: Browse All & Search             */}
         {/* ======================================= */}
         <div className="flex items-center justify-between w-full">
-          <h2 className="text-4xl md:text-[35px] font-normal tracking-tight text-zinc-900">
+          <h2 className="text-3xl md:text-[35px] font-normal tracking-tight text-zinc-900">
             Browse all
           </h2>
           
-          <button className="w-11 h-11 rounded-md border border-zinc-300 flex items-center justify-center text-zinc-600 hover:text-zinc-900 hover:border-zinc-900 transition-colors bg-white">
-            <Search className="w-[18px] h-[18px]" strokeWidth={1.5} />
+          <button 
+            className="w-10 h-10 md:w-11 md:h-11 rounded-md border border-zinc-300 flex items-center justify-center text-zinc-600 hover:text-zinc-900 hover:border-zinc-900 hover:bg-zinc-100 active:scale-95 transition-all duration-300 bg-white"
+            aria-label="Search posts"
+          >
+            <Search className="w-4 h-4 md:w-[18px] md:h-[18px]" strokeWidth={1.5} />
           </button>
         </div>
 
         {/* ======================================= */}
-        {/* LOADING STATE                           */}
+        {/* GRID LAYOUT / LOADING STATE             */}
         {/* ======================================= */}
         {isLoading ? (
-          <div className="w-full py-32 flex items-center justify-center">
-             <Loader2 className="w-8 h-8 animate-spin text-zinc-400" strokeWidth={1.5} />
+          // Premium Skeleton UI for best UX
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12 md:gap-y-16 w-full mt-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex flex-col gap-4 w-full animate-pulse">
+                <div className="w-full aspect-[16/10] bg-zinc-200 rounded-2xl"></div>
+                <div className="px-1 flex flex-col gap-3">
+                  <div className="w-24 h-6 bg-zinc-200 rounded-full"></div>
+                  <div className="w-full h-7 bg-zinc-200 rounded-md"></div>
+                  <div className="w-2/3 h-7 bg-zinc-200 rounded-md"></div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : posts.length === 0 ? (
-          <div className="w-full py-32 text-center text-zinc-500 font-normal">
-            No posts found.
+          <div className="w-full py-32 flex flex-col items-center justify-center text-center">
+             <p className="text-sm font-medium uppercase tracking-[0.2em] text-zinc-500 mb-4">Empty</p>
+             <h3 className="text-2xl font-normal text-zinc-900">No posts found.</h3>
           </div>
         ) : (
           <>
-            {/* ======================================= */}
-            {/* GRID LAYOUT                             */}
-            {/* ======================================= */}
-            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16 transition-opacity duration-500 ${isFetching ? 'opacity-50' : 'opacity-100'}`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12 md:gap-y-16 transition-opacity duration-700 ${isFetching ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
               {posts.map((post, index) => (
                 <motion.div
                   key={post.id}
@@ -99,10 +114,12 @@ export default function Blogs() {
                   {/* Image Cover */}
                   <Link href={`/blog/${post.slug}`} className="block w-full aspect-[16/10] rounded-2xl bg-zinc-200 overflow-hidden relative shadow-sm border border-zinc-200/50">
                     {post.coverImage ? (
-                      <img 
+                      <Image 
                         src={post.coverImage} 
                         alt={post.title}
-                        className="w-full h-full object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105 will-change-transform"
                       />
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-zinc-200"></div>
@@ -111,27 +128,26 @@ export default function Blogs() {
                   </Link>
 
                   {/* Card Content */}
-                  <div className="flex flex-col gap-3 px-1">
+                  <div className="flex flex-col gap-2 md:gap-3 px-1">
                     
                     {/* Tags */}
                     <div className="flex flex-wrap gap-2 mt-1">
                       {post.category && (
-                        <span className="px-3 py-1 rounded-full border border-zinc-300 text-[15px] font-medium text-zinc-700 bg-white">
+                        <span className="px-3 py-1 rounded-full border border-zinc-300 text-xs md:text-[14px] font-medium text-zinc-700 bg-white">
                           {post.category.name}
                         </span>
                       )}
-                      {/* You can map post.tags here if your data returns an array of tags */}
                     </div>
                     
                     {/* Title */}
                     <Link href={`/blog/${post.slug}`}>
-                      <h3 className="text-[22px] md:text-[24px] font-normal leading-snug tracking-tight text-zinc-900 group-hover:text-zinc-600 transition-colors duration-300">
+                      <h3 className="text-xl md:text-[24px] font-normal leading-snug tracking-tight text-zinc-900 group-hover:text-zinc-600 transition-colors duration-300 line-clamp-3">
                         {post.title}
                       </h3>
                     </Link>
 
-                    {/* Meta Info (Date & Read Time) */}
-                    <div className="flex items-center gap-3 text-[11px] font-mono tracking-widest text-zinc-500 mt-2">
+                    {/* Meta Info */}
+                    <div className="flex items-center gap-3 text-[10px] md:text-[11px] font-mono tracking-widest text-zinc-500 mt-1 md:mt-2">
                       <span>{formatDate(post.publishedAt || post.createdAt)}</span>
                       <span className="w-[3px] h-[3px] rounded-full bg-zinc-400"></span>
                       <span>{post.readTime || 4} MIN READ</span>
@@ -146,22 +162,21 @@ export default function Blogs() {
             {/* PAGINATION                              */}
             {/* ======================================= */}
             {pagination.totalPages > 1 && (
-              <div className="w-full flex items-center justify-center gap-2 mt-12 pt-8">
+              <div className="w-full flex items-center justify-center gap-2 mt-8 md:mt-12 pt-8 border-t border-zinc-200/50">
                 
                 {/* Prev Button */}
                 <button 
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page === 1}
-                  className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-zinc-900 disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors"
+                  className="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-full disabled:opacity-30 disabled:hover:bg-transparent transition-all duration-300"
                 >
-                  <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+                  <ArrowLeft className="w-5 h-5" strokeWidth={1.5} />
                 </button>
 
-                {/* Page Numbers (Simplified logic for illustration) */}
-                <div className="flex items-center gap-1 font-mono text-sm">
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1 font-mono text-sm md:text-base">
                   {[...Array(pagination.totalPages)].map((_, i) => {
                     const pageNum = i + 1;
-                    // Basic logic to show current, first, last, and a few around current
                     if (
                       pageNum === 1 || 
                       pageNum === pagination.totalPages ||
@@ -171,9 +186,9 @@ export default function Blogs() {
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${
+                          className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                             page === pageNum 
-                              ? "bg-zinc-900 text-white font-medium" 
+                              ? "bg-zinc-900 text-white font-medium shadow-md" 
                               : "text-zinc-600 hover:bg-zinc-200"
                           }`}
                         >
@@ -184,9 +199,9 @@ export default function Blogs() {
                       pageNum === page - 2 || 
                       pageNum === page + 2
                     ) {
-                      return <span key={pageNum} className="px-1 text-zinc-400">...</span>;
+                      return <span key={pageNum} className="px-2 text-zinc-400">...</span>;
                     }
-                    return null; // Hide others
+                    return null; 
                   })}
                 </div>
 
@@ -194,9 +209,9 @@ export default function Blogs() {
                 <button 
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page === pagination.totalPages}
-                  className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-zinc-900 disabled:opacity-30 disabled:hover:text-zinc-400 transition-colors"
+                  className="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-full disabled:opacity-30 disabled:hover:bg-transparent transition-all duration-300"
                 >
-                  <ArrowRight className="w-4 h-4" strokeWidth={2} />
+                  <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
                 </button>
 
               </div>

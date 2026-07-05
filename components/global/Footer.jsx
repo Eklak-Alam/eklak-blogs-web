@@ -1,16 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { ArrowUpRight, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
+import { FaGithub, FaInstagram, FaLinkedin } from "react-icons/fa6";
 
 export default function Footer() {
   const pathname = usePathname();
 
-  // ==========================================
   // HIDE FOOTER ON SPECIFIC ROUTES
-  // ==========================================
   const hiddenRoutes = [
     "/login",
     "/register",
@@ -30,63 +29,51 @@ export default function Footer() {
   if (shouldHideFooter) return null;
 
   return (
-    <footer className="relative w-full bg-[#121212] text-white pt-24 pb-8 overflow-hidden selection:bg-white selection:text-[#121212]">
-      <div className="max-w-[1600px] mx-auto px-6 md:px-12">
+    // Changed to a softer #111111 background instead of harsh black
+    <footer className="w-full bg-[#111111] text-white py-16 md:py-20 border-t border-zinc-800 selection:bg-zinc-700 font-sans">
+      <div className="max-w-[1200px] mx-auto px-6 md:px-12">
         
-        {/* ========================================
-            TOP SECTION: Grid Layout
-            ======================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-8 pb-24">
-          
-          {/* Left Column: CTA & Newsletter */}
-          <div className="lg:col-span-6 flex flex-col justify-between h-full">
-            <div>
-              <h3 className="text-4xl md:text-5xl font-medium tracking-tight text-white mb-6">
-                Got a project in mind?
-              </h3>
-              <Link 
-                href="/contact"
-                className="group inline-flex items-center gap-2 text-lg text-white pb-1 border-b border-white/40 hover:border-white transition-colors duration-300"
-              >
-                Let's make it happen 
-                <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
-              </Link>
-            </div>
-
-            <div className="mt-16 lg:mt-32">
-              <p className="text-sm text-gray-300 mb-4 uppercase tracking-widest font-medium">Subscribe to insights</p>
-              <div className="relative max-w-sm flex items-center border-b border-white/30 pb-2 focus-within:border-white transition-colors duration-300">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email address" 
-                  className="w-full bg-transparent outline-none text-white placeholder:text-gray-400 text-sm"
-                />
-                <button className="text-sm font-medium text-white hover:text-gray-300 transition-colors">
-                  Submit
-                </button>
-              </div>
-            </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col md:flex-row justify-between gap-16 md:gap-8"
+        >
+          {/* ========================================
+              LEFT: Brand & Direct Contact
+              ======================================== */}
+          <div className="flex flex-col max-w-sm">
+            <Link href="/" className="text-2xl font-medium text-white tracking-tight mb-4 hover:text-zinc-300 transition-colors">
+              Eklak Alam.
+            </Link>
+            <p className="text-[15px] leading-relaxed mb-8 text-zinc-300">
+              A digital craftsman building minimal, high-performance web experiences. Available for freelance opportunities.
+            </p>
+            
+            <a 
+              href="mailto:hello@eklak.com" 
+              className="group inline-flex items-center gap-2 text-[15px] font-medium text-white w-fit"
+            >
+              <span className="relative pb-1 border-b border-zinc-600 group-hover:border-white transition-colors duration-300">
+                hello@eklak.com
+              </span>
+              <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300" />
+            </a>
           </div>
 
-          {/* Right Column: Links */}
-          <div className="lg:col-span-5 lg:col-start-8 grid grid-cols-2 sm:grid-cols-3 gap-10">
+          {/* ========================================
+              RIGHT: Clean Link Columns
+              ======================================== */}
+          <div className="flex gap-16 sm:gap-24">
             <FooterColumn 
-              title="Menu"
+              title="Navigation"
               links={[
                 { name: "Home", href: "/" },
                 { name: "About", href: "/about" },
                 { name: "Work", href: "/work" },
                 { name: "Services", href: "/services" },
                 { name: "Contact", href: "/contact" },
-              ]}
-            />
-            <FooterColumn 
-              title="Socials"
-              links={[
-                { name: "Twitter", href: "#" },
-                { name: "LinkedIn", href: "#" },
-                { name: "Instagram", href: "#" },
-                { name: "GitHub", href: "#" },
               ]}
             />
             <FooterColumn 
@@ -98,59 +85,73 @@ export default function Footer() {
               ]}
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* ========================================
-            MIDDLE SECTION: Location / Time
+            BOTTOM: Copyright, Location & Social Icons
             ======================================== */}
-        {/* <div className="flex flex-col md:flex-row justify-between items-center py-6 border-t border-white/20 text-sm text-[#FFFFFF]">
-          <div className="flex items-center gap-3 mb-4 md:mb-0 ">
-            <p>Based in Patna, India — Available Worldwide</p>
-          </div>
-          <div className="flex gap-6">
-            <p>© {new Date().getFullYear()} Eklak Alam</p>
-            <p>All Rights Reserved</p>
-          </div>
-        </div> */}
-
-      </div>
-
-      {/* ========================================
-          BOTTOM SECTION: Massive Brand Typography
-          ======================================== */}
-      <div className="w-full flex justify-center items-end leading-none mt-8 overflow-hidden select-none pointer-events-none">
-        <motion.h1 
-          initial={{ y: "20%", opacity: 0 }}
-          whileInView={{ y: 0, opacity: 1 }}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[18vw] font-black text-white text-center tracking-tighter m-0 p-0 leading-[0.75]"
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mt-20 pt-8 border-t border-zinc-800 flex flex-col-reverse sm:flex-row justify-between items-center gap-6 text-[14px]"
         >
-          EKLAK.
-        </motion.h1>
+          {/* Made the text pure white and removed the green dot */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-white text-center sm:text-left">
+            <p>© {new Date().getFullYear()} Eklak Alam. All rights reserved.</p>
+            <span className="hidden sm:block text-zinc-600">•</span>
+            <p>Based in Patna, India</p>
+          </div>
+          
+          {/* Social Media Icons */}
+          <div className="flex items-center gap-5">
+            <SocialIcon href="#" icon={X} label="Twitter" />
+            <SocialIcon href="#" icon={FaLinkedin} label="LinkedIn" />
+            <SocialIcon href="#" icon={FaInstagram} label="Instagram" />
+            <SocialIcon href="#" icon={FaGithub} label="GitHub" />
+          </div>
+        </motion.div>
+
       </div>
     </footer>
   );
 }
 
-/* Micro-component for clean link columns */
+/* Micro-component for minimal text links */
 function FooterColumn({ title, links }) {
   return (
     <div className="flex flex-col gap-5">
-      <h4 className="text-xs uppercase tracking-widest text-gray-400 font-bold mb-2">
+      <h4 className="text-[14px] font-medium text-white mb-1">
         {title}
       </h4>
-      {links.map((link) => (
-        <Link 
-          key={link.name} 
-          href={link.href}
-          className="group relative text-white w-fit text-sm md:text-base transition-colors hover:text-gray-300"
-        >
-          {link.name}
-          {/* Minimal underline hover effect */}
-          <span className="absolute left-0 -bottom-1 w-0 h-[1px] bg-white transition-all duration-300 ease-out group-hover:w-full"></span>
-        </Link>
-      ))}
+      <div className="flex flex-col gap-3">
+        {links.map((link) => (
+          <Link 
+            key={link.name} 
+            href={link.href}
+            // Crisp white text on hover, light gray default
+            className="text-[15px] text-zinc-400 hover:text-white transition-colors duration-300 w-fit"
+          >
+            {link.name}
+          </Link>
+        ))}
+      </div>
     </div>
+  );
+}
+
+/* Micro-component for Social Icons */
+function SocialIcon({ href, icon: Icon, label }) {
+  return (
+    <a 
+      href={href} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      aria-label={label}
+      className="text-zinc-400 hover:text-white hover:-translate-y-1 transition-all duration-300"
+    >
+      <Icon className="w-5 h-5" strokeWidth={1.5} />
+    </a>
   );
 }

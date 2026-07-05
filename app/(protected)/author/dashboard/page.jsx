@@ -181,7 +181,7 @@ export default function AuthorDashboardPage() {
 
   return (
     // Clean #f2f2f2 background, pt-32 clears the global navbar
-    <div className="min-h-screen bg-[#f2f2f2] text-zinc-900 selection:bg-zinc-300 pt-10 pb-24 px-4 sm:px-6 relative">
+    <div className="min-h-screen bg-[#f2f2f2] text-zinc-900 pt-10 pb-24 px-4 sm:px-6 relative">
       
       <div className="relative z-10 max-w-[1200px] mx-auto w-full">
         

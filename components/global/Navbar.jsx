@@ -1,21 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Shield, 
+  LogOut, 
+  Loader2, 
+  User, 
+  ChevronDown, 
+  PenTool, 
+  Edit3 
+} from "lucide-react";
+
+// Importing your auth hooks
+import { useAuthStore } from "@/store/useAuthStore";
+import { useGetMeQuery } from "@/hooks/queries/useUserQueries";
+import { useLogoutMutation } from "@/hooks/mutations/useAuthMutations";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
+  
   const { scrollY } = useScroll();
   const pathname = usePathname();
 
+  // 1. Get Auth State
+  const { isAuthenticated, isInitialized } = useAuthStore();
+  
   // ==========================================
   // HIDE NAVBAR ON SPECIFIC ROUTES
   // ==========================================
-  // Add any base paths here where you DO NOT want the navbar to show.
   const hiddenRoutes = [
     "/login",
     "/register",
@@ -25,44 +42,36 @@ export default function Navbar() {
     "/writer",
     "/editor",
     "/author",
-    "forgot-password",
-    "reset-password",
-    "verify-email",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
   ];
 
-  // Check if the current pathname starts with any of the hidden routes
-  // We use .startsWith() so it also hides on sub-pages (e.g., /dashboard/settings)
   const shouldHideNavbar = hiddenRoutes.some((route) => pathname.startsWith(route));
 
   // ==========================================
-  // SMART SCROLL: Hide down, Show up
+  // SMART SCROLL 
   // ==========================================
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious();
-    
-    // Don't hide if the mobile menu is open
     if (isOpen) return;
 
     if (latest > previous && latest > 80) {
-      setIsHidden(true); // Scrolling down
+      setIsHidden(true); 
     } else {
-      setIsHidden(false); // Scrolling up
+      setIsHidden(false); 
     }
   });
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
+    return () => { document.body.style.overflow = "unset"; };
   }, [isOpen]);
 
-  // Expanded Navigation Links
   const navLinks = [
     { name: "About", href: "/about" },
     { name: "Services", href: "/services" },
@@ -71,33 +80,27 @@ export default function Navbar() {
     { name: "Blogs", href: "/blogs" },
   ];
 
-  // If we are on a hidden route, don't render the Navbar at all
   if (shouldHideNavbar) return null;
 
   return (
     <>
-      {/* ======================================= */}
-      {/* FULL WIDTH DESKTOP HEADER               */}
-      {/* ======================================= */}
       <motion.header 
         variants={{
           visible: { y: 0, opacity: 1 },
           hidden: { y: "-100%", opacity: 0 },
         }}
         animate={isHidden ? "hidden" : "visible"}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100"
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-zinc-100"
       >
-        <div className="w-full px-6 md:px-12 h-[80px] flex items-center justify-between max-w-[1600px] mx-auto">
+        <div className="w-full px-6 md:px-12 h-[80px] flex items-center justify-between max-w-[1400px] mx-auto">
           
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 z-50" onClick={() => setIsOpen(false)}>
-            <span className="text-[22px] font-extrabold text-black tracking-tight hover:opacity-70 transition-opacity duration-300">
+          <Link href="/" className="flex items-center gap-2 z-[60]" onClick={() => setIsOpen(false)}>
+            <span className="text-[22px] font-bold text-zinc-900 tracking-tight transition-opacity duration-300">
               Eklak.
             </span>
           </Link>
 
-          {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-8 relative h-full">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -107,14 +110,13 @@ export default function Navbar() {
                   href={link.href}
                   className="relative flex items-center h-full text-[14px] font-medium transition-colors duration-300 group"
                 >
-                  <span className={`relative z-10 ${isActive ? "text-black" : "text-gray-500 group-hover:text-black"}`}>
+                  <span className={`relative z-10 ${isActive ? "text-zinc-900" : "text-zinc-500 group-hover:text-zinc-900"}`}>
                     {link.name}
                   </span>
-                  {/* Premium animated underline for active link */}
                   {isActive && (
                     <motion.div
                       layoutId="nav-underline"
-                      className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-black"
+                      className="absolute bottom-0 left-0 right-0 h-[2px] bg-zinc-900"
                       transition={{ type: "spring", stiffness: 350, damping: 30 }}
                     />
                   )}
@@ -123,55 +125,61 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Desktop Actions */}
-          <div className="hidden lg:flex items-center gap-5">
-            <Link 
-              href="/login" 
-              className="text-[14px] font-medium text-gray-500 hover:text-black transition-colors duration-300"
-            >
-              Login
-            </Link>
-            
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Link 
-                href="/contact" 
-                className="px-6 py-2.5 bg-black text-white text-[14px] font-medium rounded-xl hover:bg-gray-800 hover:shadow-md transition-all duration-300"
-              >
-                Contact us
-              </Link>
-            </motion.div>
+          <div className="hidden lg:flex items-center gap-5 z-50">
+            {!isInitialized ? (
+              <Loader2 className="w-5 h-5 animate-spin text-zinc-300" />
+            ) : isAuthenticated ? (
+              <DesktopUserMenu setIsOpen={setIsOpen} />
+            ) : (
+              <>
+                <Link 
+                  href="/login" 
+                  className="text-[14px] font-medium text-zinc-500 hover:text-zinc-900 transition-colors duration-300"
+                >
+                  Login
+                </Link>
+                <Link 
+                  href="/register" 
+                  className="px-5 py-2.5 bg-zinc-900 text-white text-[13px] font-medium rounded-full hover:bg-zinc-800 transition-all duration-300 active:scale-95"
+                >
+                  Get started
+                </Link>
+              </>
+            )}
           </div>
 
-          {/* Mobile Hamburger Toggle */}
           <button 
-            className="lg:hidden z-[60] text-black p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+            className="lg:hidden z-[60] w-10 h-10 flex items-center justify-center rounded-full bg-zinc-100 hover:bg-zinc-200 transition-colors focus:outline-none"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
-            <motion.div
-              animate={{ rotate: isOpen ? 90 : 0 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {isOpen ? <X size={26} strokeWidth={2} /> : <Menu size={26} strokeWidth={2} />}
-            </motion.div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-zinc-900">
+              <motion.line 
+                x1="3" y1="8" x2="21" y2="8" 
+                animate={{ rotate: isOpen ? 45 : 0, y: isOpen ? 4 : 0 }} 
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} 
+              />
+              <motion.line 
+                x1="3" y1="16" x2="21" y2="16" 
+                animate={{ rotate: isOpen ? -45 : 0, y: isOpen ? -4 : 0, opacity: isOpen ? 1 : 1 }} 
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} 
+              />
+            </svg>
           </button>
 
         </div>
       </motion.header>
 
-      {/* ======================================= */}
-      {/* MOBILE FULL-SCREEN MENU                 */}
-      {/* ======================================= */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            animate={{ opacity: 1, backdropFilter: "blur(20px)" }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-40 bg-white/95 pt-[100px] px-6 pb-8 flex flex-col lg:hidden overflow-y-auto"
+            className="fixed inset-0 z-40 bg-white pt-[100px] px-6 pb-8 flex flex-col lg:hidden overflow-y-auto"
           >
-            <nav className="flex flex-col gap-1 mt-4">
+            <nav className="flex flex-col gap-2 mt-4">
               {navLinks.map((link, i) => {
                 const isActive = pathname === link.href;
                 return (
@@ -179,13 +187,13 @@ export default function Navbar() {
                     key={link.name}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.08 + 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ delay: i * 0.05 + 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <Link 
                       href={link.href}
                       onClick={() => setIsOpen(false)}
-                      className={`text-[28px] font-semibold tracking-tight block py-4 border-b border-gray-100 transition-colors ${
-                        isActive ? "text-black" : "text-gray-400 hover:text-black"
+                      className={`text-[32px] font-medium tracking-tight block py-3 border-b border-zinc-100 transition-colors ${
+                        isActive ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-900"
                       }`}
                     >
                       {link.name}
@@ -195,31 +203,217 @@ export default function Navbar() {
               })}
             </nav>
 
-            {/* Mobile Buttons */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ delay: 0.3, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="mt-auto pt-12 flex flex-col gap-3"
             >
-              <Link 
-                href="/contact" 
-                onClick={() => setIsOpen(false)}
-                className="w-full py-4 bg-black text-white text-center text-[16px] font-medium rounded-xl active:scale-[0.98] transition-all shadow-md"
-              >
-                Contact us
-              </Link>
-              <Link 
-                href="/login" 
-                onClick={() => setIsOpen(false)}
-                className="w-full py-4 bg-gray-50 border border-gray-200 text-black text-center text-[16px] font-medium rounded-2xl active:scale-[0.98] transition-all"
-              >
-                Login
-              </Link>
+              {!isInitialized ? (
+                 <Loader2 className="w-5 h-5 animate-spin text-zinc-300 mx-auto" />
+              ) : isAuthenticated ? (
+                <MobileUserMenu setIsOpen={setIsOpen} />
+              ) : (
+                <>
+                  <Link 
+                    href="/register" 
+                    onClick={() => setIsOpen(false)}
+                    className="w-full py-4 bg-zinc-900 text-white text-center text-[16px] font-medium rounded-xl active:scale-[0.98] transition-all"
+                  >
+                    Get started
+                  </Link>
+                  <Link 
+                    href="/login" 
+                    onClick={() => setIsOpen(false)}
+                    className="w-full py-4 bg-white border border-zinc-200 text-zinc-900 text-center text-[16px] font-medium rounded-xl active:scale-[0.98] transition-all"
+                  >
+                    Login
+                  </Link>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+    </>
+  );
+}
+
+// ==========================================
+// DESKTOP AUTH MENU COMPONENT
+// ==========================================
+function DesktopUserMenu({ setIsOpen }) {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const router = useRouter();
+
+  const { data: response, isLoading: isUserLoading } = useGetMeQuery();
+  const { mutate: logoutUser, isPending: isLoggingOut } = useLogoutMutation();
+  const user = response?.user || response?.data?.user;
+  const userRole = user?.role?.toUpperCase();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsProfileOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    logoutUser(undefined, {
+      onSuccess: () => {
+        setIsProfileOpen(false);
+        setIsOpen(false);
+        router.push("/login");
+      }
+    });
+  };
+
+  if (isUserLoading || !user) return <Loader2 className="w-5 h-5 animate-spin text-zinc-300" />;
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button 
+        onClick={() => setIsProfileOpen(!isProfileOpen)}
+        // Added smooth shadow, better border, and active state scaling
+        className="flex items-center gap-2 p-1 pr-3 rounded-full border border-zinc-200 hover:border-zinc-300 hover:shadow-sm bg-white transition-all duration-300 active:scale-95"
+      >
+        <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-100 flex items-center justify-center">
+          {user.image ? (
+            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+          ) : (
+            <User className="w-4 h-4 text-zinc-400" />
+          )}
+        </div>
+        <span className="text-[13px] font-medium text-zinc-700 max-w-[100px] truncate">
+          {user.name?.split(" ")[0] || "User"}
+        </span>
+        {/* Animated Chevron Arrow */}
+        <ChevronDown 
+          className={`w-4 h-4 text-zinc-400 transition-transform duration-300 ${isProfileOpen ? "rotate-180" : ""}`} 
+        />
+      </button>
+
+      <AnimatePresence>
+        {isProfileOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute right-0 mt-3 w-60 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-zinc-100 overflow-hidden flex flex-col py-2"
+          >
+            <div className="px-4 py-3 border-b border-zinc-100 mb-2">
+              <p className="text-[14px] font-medium text-zinc-900 truncate">{user.name}</p>
+              <p className="text-[12px] text-zinc-500 truncate">{user.email}</p>
+            </div>
+
+            {/* Centralized Role-Based Routing */}
+            {userRole === "ADMIN" && (
+              <Link href="/admin/dashboard" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors">
+                <Shield className="w-4 h-4" /> Admin Dashboard
+              </Link>
+            )}
+            
+            {userRole === "AUTHOR" && (
+              <Link href="/author/dashboard" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors">
+                <PenTool className="w-4 h-4" /> Author Dashboard
+              </Link>
+            )}
+
+            {userRole === "WRITER" && (
+              <Link href="/writer/dashboard" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors">
+                <Edit3 className="w-4 h-4" /> Writer Dashboard
+              </Link>
+            )}
+            
+            {/* Standard Dashboard for Everyone */}
+            <Link href="/dashboard" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 transition-colors">
+              <LayoutDashboard className="w-4 h-4" /> Dashboard
+            </Link>
+
+            <button 
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors mt-2 border-t border-zinc-50 pt-3"
+            >
+              {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+              Logout
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ==========================================
+// MOBILE AUTH MENU COMPONENT
+// ==========================================
+function MobileUserMenu({ setIsOpen }) {
+  const router = useRouter();
+  
+  const { data: response, isLoading: isUserLoading } = useGetMeQuery();
+  const { mutate: logoutUser, isPending: isLoggingOut } = useLogoutMutation();
+  const user = response?.user || response?.data?.user;
+  const userRole = user?.role?.toUpperCase();
+
+  const handleLogout = () => {
+    logoutUser(undefined, {
+      onSuccess: () => {
+        setIsOpen(false);
+        router.push("/login");
+      }
+    });
+  };
+
+  if (isUserLoading || !user) return <Loader2 className="w-5 h-5 animate-spin text-zinc-300 mx-auto" />;
+
+  return (
+    <>
+      <div className="flex items-center gap-4 mb-4 p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-zinc-200">
+            {user.image ? <img src={user.image} alt={user.name} className="w-full h-full object-cover" /> : <User className="w-6 h-6 text-zinc-400 m-auto mt-3" />}
+          </div>
+          <div>
+            <p className="text-[16px] font-medium text-zinc-900">{user.name}</p>
+            <p className="text-[13px] text-zinc-500">{user.email}</p>
+          </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-2">
+        {/* Centralized Role-Based Routing for Mobile */}
+        {userRole === "ADMIN" && (
+          <Link href="/admin/dashboard" onClick={() => setIsOpen(false)} className="w-full py-3 bg-zinc-100 text-zinc-900 flex justify-center items-center gap-2 text-[14px] font-medium rounded-xl">
+            <Shield className="w-4 h-4" /> Admin
+          </Link>
+        )}
+        
+        {userRole === "AUTHOR" && (
+          <Link href="/author/dashboard" onClick={() => setIsOpen(false)} className="w-full py-3 bg-zinc-100 text-zinc-900 flex justify-center items-center gap-2 text-[14px] font-medium rounded-xl">
+            <PenTool className="w-4 h-4" /> Author
+          </Link>
+        )}
+
+        {userRole === "WRITER" && (
+          <Link href="/writer/dashboard" onClick={() => setIsOpen(false)} className="w-full py-3 bg-zinc-100 text-zinc-900 flex justify-center items-center gap-2 text-[14px] font-medium rounded-xl">
+            <Edit3 className="w-4 h-4" /> Writer
+          </Link>
+        )}
+
+        <Link href="/dashboard" onClick={() => setIsOpen(false)} className={`w-full py-3 flex justify-center items-center gap-2 text-[14px] font-medium rounded-xl ${userRole === "USER" || !userRole ? 'col-span-2 bg-zinc-900 text-white' : 'bg-zinc-900 text-white'}`}>
+          <LayoutDashboard className="w-4 h-4" /> Dashboard
+        </Link>
+      </div>
+
+      <button 
+        onClick={handleLogout}
+        disabled={isLoggingOut}
+        className="w-full py-4 bg-white border border-red-100 text-red-600 flex justify-center items-center gap-2 text-[15px] font-medium rounded-xl mt-2 active:scale-[0.98] transition-all"
+      >
+          {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />} Logout
+      </button>
     </>
   );
 }
