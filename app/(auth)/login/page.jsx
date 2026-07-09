@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 
 import { useLoginMutation } from "@/hooks/mutations/useAuthMutations";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -18,6 +19,9 @@ const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email("Please enter a valid email"),
   password: z.string().min(1, "Password is required"),
 });
+
+// Fluid easing for high-end cinematic feel
+const fluidEase = [0.25, 0.1, 0.25, 1];
 
 function LoginForm() {
   const router = useRouter();
@@ -65,25 +69,25 @@ function LoginForm() {
     });
   };
 
-  // Snappy, lightweight animations (optimized for performance)
+  // Snappy, lightweight animations
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.05, delayChildren: 0.05 }
+      transition: { staggerChildren: 0.05, delayChildren: 0.1 }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+    hidden: { opacity: 0, y: 15 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: fluidEase } },
   };
 
   // Loading State
   if (isInitialized && isAuthenticated) {
     return (
-      <div className="h-[100dvh] w-full flex justify-center items-center bg-[#FFFFFF]">
-        <div className="w-5 h-5 border-2 border-zinc-300 border-t-black rounded-full animate-spin" />
+      <div className="h-screen w-full flex justify-center items-center bg-[#fafafa]">
+        <Loader2 className="w-6 h-6 animate-spin text-black" />
       </div>
     );
   }
@@ -91,43 +95,54 @@ function LoginForm() {
   if (!isInitialized) return null;
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#FFFFFF] flex flex-col justify-center items-center px-6 py-20">
+    <div className="min-h-screen w-full bg-[#fafafa] flex flex-col justify-center items-center px-6 py-20 font-sans text-zinc-900">
       
+      {/* Brand Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: fluidEase }}
+        className="absolute top-8 left-8 md:top-12 md:left-12"
+      >
+        <Link href="/" className="outline-none">
+          <h2 className="text-[24px] font-black tracking-tighter text-black hover:opacity-70 transition-opacity">
+            Eklak.
+          </h2>
+        </Link>
+      </motion.div>
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-[360px] flex flex-col"
+        className="w-full max-w-[380px] flex flex-col bg-white p-8 md:p-10 rounded-2xl border border-zinc-200/60 shadow-sm"
       >
         {/* Header */}
-        <motion.div variants={itemVariants} className="mb-10">
-          <h1 className="text-[28px] font-bold tracking-tight text-black mb-2">
-            Welcome back.
+        <motion.div variants={itemVariants} className="mb-8">
+          <h1 className="text-[26px] font-bold tracking-tight text-black mb-1.5">
+            Welcome back
           </h1>
-          <p className="text-[15px] text-zinc-500 font-medium">
-            Enter your details to sign in.
+          <p className="text-[14px] text-zinc-500 font-medium">
+            Enter your credentials to sign in.
           </p>
         </motion.div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           
-          {/* FLAT EMAIL INPUT */}
+          {/* EMAIL INPUT */}
           <motion.div variants={itemVariants}>
+            <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Email</label>
             <input
               type="email"
               {...register("email")}
-              placeholder="Email address"
-              className={`w-full bg-white border py-3.5 px-5 text-[15px] text-black placeholder-zinc-400 outline-none transition-colors rounded-2xl focus:border-black ${
-                errors.email ? "border-red-400" : "border-zinc-200/80 hover:border-zinc-300"
+              placeholder="name@example.com"
+              className={`w-full bg-zinc-50 border py-3 px-4 text-[14px] font-medium text-black placeholder-zinc-400 outline-none transition-all rounded-xl ${
+                errors.email ? "border-red-400 focus:border-red-500 focus:ring-red-500 bg-red-50/30" : "border-zinc-200/80 hover:border-zinc-300"
               }`}
             />
             <AnimatePresence>
               {errors.email && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="px-1 pt-2 text-[13px] font-medium text-red-500"
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                  className="px-1 pt-1.5 text-[12px] font-bold text-red-500"
                 >
                   {errors.email.message}
                 </motion.div>
@@ -135,36 +150,34 @@ function LoginForm() {
             </AnimatePresence>
           </motion.div>
 
-          {/* FLAT PASSWORD INPUT */}
+          {/* PASSWORD INPUT */}
           <motion.div variants={itemVariants} className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              {...register("password")}
-              placeholder="Password"
-              className={`w-full bg-white border py-3.5 pl-5 pr-12 text-[15px] text-black placeholder-zinc-400 outline-none transition-colors rounded-2xl focus:border-black ${
-                errors.password ? "border-red-400" : "border-zinc-200/80 hover:border-zinc-300"
-              }`}
-            />
-            
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-[18px] text-zinc-400 hover:text-black transition-colors"
-            >
-              {showPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              )}
-            </button>
+            <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                {...register("password")}
+                placeholder="••••••••"
+                className={`w-full bg-zinc-50 border py-3 pl-4 pr-12 text-[14px] font-medium text-black placeholder-zinc-400 outline-none transition-all rounded-xl ${
+                  errors.password ? "border-red-400 focus:border-red-500 focus:ring-red-500 bg-red-50/30" : "border-zinc-200/80 hover:border-zinc-300"
+                }`}
+              />
+              
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-black transition-colors outline-none p-1"
+                tabIndex="-1"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             
             <AnimatePresence>
               {errors.password && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="px-1 pt-2 text-[13px] font-medium text-red-500"
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                  className="px-1 pt-1.5 text-[12px] font-bold text-red-500"
                 >
                   {errors.password.message}
                 </motion.div>
@@ -176,13 +189,11 @@ function LoginForm() {
           <AnimatePresence>
             {errors.root?.serverError && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
+                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="mt-2 py-3 px-4 bg-red-50 text-red-600 text-[13px] font-medium rounded-2xl flex items-center gap-2">
-                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div className="mt-2 py-3 px-4 bg-red-50 border border-red-100 text-red-600 text-[13px] font-bold rounded-xl flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
                   {errors.root.serverError.message}
                 </div>
               </motion.div>
@@ -190,36 +201,33 @@ function LoginForm() {
           </AnimatePresence>
 
           <motion.div variants={itemVariants} className="pt-4">
-            {/* MINIMAL FLAT BUTTON */}
+            {/* SOLID BUTTON */}
             <button
               type="submit"
               disabled={isPending}
-              className="w-full py-4 bg-black text-[#f2f2f2] text-[15px] font-semibold rounded-2xl disabled:opacity-50 transition-colors duration-200 hover:bg-zinc-800 active:scale-[0.98] flex items-center justify-center gap-2"
+              className="w-full py-3.5 cursor-pointer bg-black font-bold text-white text-[14px] rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:bg-zinc-800 active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm"
             >
               {isPending ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#f2f2f2]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Signing in...
                 </>
               ) : (
-                "Continue"
+                "Sign In"
               )}
             </button>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="pt-4 flex justify-between items-center px-1">
+          <motion.div variants={itemVariants} className="pt-4 flex justify-between items-center px-1 border-t border-zinc-100">
             <Link 
               href="/forgot-password" 
-              className="text-[14px] font-medium text-zinc-500 hover:text-black transition-colors"
+              className="text-[13px] font-bold text-zinc-500 hover:text-black transition-colors outline-none"
             >
               Forgot password?
             </Link>
             <Link 
               href="/register" 
-              className="text-[14px] font-medium text-zinc-500 hover:text-black transition-colors"
+              className="text-[13px] font-bold text-zinc-500 hover:text-black transition-colors outline-none"
             >
               Create account
             </Link>
@@ -234,8 +242,8 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="h-[100dvh] flex items-center justify-center bg-[#f2f2f2]">
-        <div className="w-5 h-5 border-2 border-zinc-300 border-t-black rounded-full animate-spin" />
+      <div className="h-screen w-full flex items-center justify-center bg-[#fafafa]">
+        <Loader2 className="w-6 h-6 animate-spin text-black" />
       </div>
     }>
       <LoginForm />

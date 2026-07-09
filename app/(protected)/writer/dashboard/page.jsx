@@ -201,8 +201,8 @@ export default function WriterHubPage() {
                 </p>
               </div>
               <div className="w-9 h-9 rounded-full bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-500 overflow-hidden shadow-sm shrink-0">
-                {user?.profileImage ? (
-                  <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                {user?.image ? (
+                  <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <User className="w-4 h-4" />
                 )}
@@ -233,8 +233,8 @@ export default function WriterHubPage() {
               
               {/* Static Mobile Profile Image */}
               <div className="w-8 h-8 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center overflow-hidden shrink-0">
-                {user?.profileImage ? (
-                  <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                {user?.image ? (
+                  <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <User className="w-4 h-4 text-zinc-500" />
                 )}

@@ -278,7 +278,7 @@ function EditorFormContent() {
           <div className="hidden sm:flex flex-items gap-3 text-right">
              <p className="text-[13px] font-bold text-black">{user?.name || "Eklak"}</p>
              <div className="w-8 h-8 rounded-md bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-500 overflow-hidden shrink-0">
-               {user?.profileImage ? <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" /> : <User className="w-4 h-4" />}
+               {user?.image ? <img src={user.image} alt="Profile" className="w-full h-full object-cover" /> : <User className="w-4 h-4" />}
              </div>
           </div>
         </header>

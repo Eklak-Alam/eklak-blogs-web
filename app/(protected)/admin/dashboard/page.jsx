@@ -268,7 +268,7 @@ export default function AdminDashboardPage() {
                <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{currentUser?.role}</p>
              </div>
              <div className="w-9 h-9 rounded-full bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-500 overflow-hidden shrink-0 shadow-sm">
-               {currentUser?.profileImage ? <img src={currentUser.profileImage} alt="Profile" className="w-full h-full object-cover" /> : <User className="w-4 h-4" />}
+               {currentUser?.image ? <img src={currentUser.image} alt="Profile" className="w-full h-full object-cover" /> : <User className="w-4 h-4" />}
              </div>
           </div>
         </header>
