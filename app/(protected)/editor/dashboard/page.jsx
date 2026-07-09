@@ -76,7 +76,7 @@ const TipTapEditor = ({ content, onChange }) => {
       onClick={onClick} 
       className={`p-2 rounded-md transition-all outline-none flex items-center justify-center ${
         isActive 
-          ? 'bg-black text-white shadow-sm' 
+          ? 'bg-black text-[#f2f2f2] shadow-sm' 
           : 'text-zinc-500 hover:bg-zinc-100 hover:text-black'
       }`}
     >
@@ -87,7 +87,7 @@ const TipTapEditor = ({ content, onChange }) => {
   return (
     <div className="w-full flex flex-col relative group">
       {/* Sleek Floating Toolbar */}
-      <div className="sticky top-[90px] z-20 flex items-center gap-1 p-1.5 bg-white/90 backdrop-blur-md border border-zinc-200/80 rounded-lg w-max mb-6 shadow-sm opacity-60 focus-within:opacity-100 hover:opacity-100 transition-opacity duration-200">
+      <div className="sticky top-[90px] z-20 flex items-center gap-1 p-1.5 bg-[#f2f2f2]/90 backdrop-blur-md border border-zinc-200/80 rounded-lg w-max mb-6 shadow-sm opacity-60 focus-within:opacity-100 hover:opacity-100 transition-opacity duration-200">
         <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')}><Bold className="w-4 h-4" strokeWidth={2.5} /></ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')}><Italic className="w-4 h-4" strokeWidth={2.5} /></ToolbarButton>
         <div className="w-px h-5 bg-zinc-200 mx-1.5" />
@@ -113,7 +113,7 @@ const TipTapEditor = ({ content, onChange }) => {
 export default function EditorPage() {
   return (
     <Suspense fallback={
-      <div className="h-screen bg-[#fafafa] flex items-center justify-center">
+      <div className="h-screen bg-[#f2f2f2] flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-black" />
       </div>
     }>
@@ -129,6 +129,9 @@ function EditorFormContent() {
 
   const { isAuthenticated, isInitialized, user } = useAuthStore();
   
+  // Dynamic Dashboard Path based on User Role
+  const dashboardPath = user?.role === 'WRITER' ? '/writer/dashboard' : '/editor/dashboard';
+
   const { data: catResponse, isLoading: catsLoading } = useGetCategoriesQuery();
   const { data: tagResponse, isLoading: tagsLoading } = useGetTagsQuery();
   const { mutate: createPost, isPending: isCreating } = useCreatePostMutation();
@@ -172,10 +175,10 @@ function EditorFormContent() {
       
       if (existingPost.authorId !== user?.id && user?.role !== 'ADMIN' && user?.role !== 'AUTHOR') {
         toast.error("Permission denied.");
-        router.push("/editor/dashboard");
+        router.push(dashboardPath);
       }
     }
-  }, [existingPost, reset, user, router]);
+  }, [existingPost, reset, user, router, dashboardPath]);
 
   // Image Dropzone
   const onDrop = useCallback((acceptedFiles) => {
@@ -207,15 +210,36 @@ function EditorFormContent() {
     if (existingPost) {
       updatePost({ id: existingPost.id, payload }, {
         onSuccess: () => {
-          toast.success("Post updated successfully.");
-          router.push('/editor/dashboard');
+          toast.success("Post updated successfully", {
+            description: "Routing back to your dashboard...",
+          });
+          setTimeout(() => {
+            router.push(dashboardPath);
+          }, 1500);
         }
       });
     } else {
       createPost(payload, {
         onSuccess: () => {
-          toast.success(`Post ${status === "PUBLISHED" ? "published" : "saved"} successfully.`);
-          router.push('/editor/dashboard');
+          // Fire premium success toast
+          toast.success(
+            status === "PUBLISHED" ? "Post Published! 🎉" : "Draft Saved! 📝", 
+            {
+              description: "Routing back to your dashboard...",
+              duration: 3000,
+            }
+          );
+          
+          // Clear everything so the user sees the slate wipe clean
+          reset({ title: "", content: "", excerpt: "", categoryId: "" });
+          setCoverImageBase64(null);
+          setSelectedTags([]);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+
+          // Delay the redirect slightly so the toast and clean slate are visible
+          setTimeout(() => {
+            router.push(dashboardPath);
+          }, 1500);
         }
       });
     }
@@ -226,19 +250,19 @@ function EditorFormContent() {
 
   if (!isInitialized || (editSlug && postLoading)) {
     return (
-      <div className="h-screen bg-[#fafafa] flex items-center justify-center">
+      <div className="h-screen bg-[#f2f2f2] flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-black" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] flex flex-col md:flex-row font-sans text-zinc-900">
+    <div className="min-h-screen bg-[#f2f2f2] flex flex-col md:flex-row font-sans text-zinc-900">
       
       {/* ======================================= */}
       {/* DESKTOP SIDEBAR                         */}
       {/* ======================================= */}
-      <aside className="hidden md:flex flex-col w-[280px] lg:w-[320px] fixed inset-y-0 left-0 bg-white border-r border-zinc-200/50 p-6 overflow-y-auto z-30">
+      <aside className="hidden md:flex flex-col w-[280px] lg:w-[320px] fixed inset-y-0 left-0 bg-[#f2f2f2] border-r border-zinc-200/50 p-6 overflow-y-auto z-30">
         <div className="mb-10">
           <Link href="/" className="inline-block outline-none">
             <h2 className="text-[24px] font-black tracking-tighter text-black hover:opacity-70 transition-opacity">
@@ -250,7 +274,7 @@ function EditorFormContent() {
 
         <nav className="flex flex-col gap-1.5 mb-10">
           <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-3 px-3">Navigation</p>
-          <Link href="/editor/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-zinc-500 hover:text-black hover:bg-zinc-50 border border-transparent transition-all outline-none">
+          <Link href={dashboardPath} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-zinc-500 hover:text-black hover:bg-zinc-50 border border-transparent transition-all outline-none">
             <LayoutDashboard className="w-4 h-4" /> My Posts
           </Link>
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold bg-zinc-100/80 text-black shadow-sm border border-zinc-200/50 outline-none">
@@ -265,9 +289,9 @@ function EditorFormContent() {
       <div className="flex-1 md:ml-[280px] lg:ml-[320px] flex flex-col w-full min-h-screen">
         
         {/* Top Navbar */}
-        <header className="flex h-[72px] bg-white/80 backdrop-blur-md border-b border-zinc-200/50 items-center justify-between px-6 lg:px-12 sticky top-0 z-20">
+        <header className="flex h-[72px] bg-[#f2f2f2]/80 backdrop-blur-md border-b border-zinc-200/50 items-center justify-between px-6 lg:px-12 sticky top-0 z-20">
           <div className="flex items-center gap-3 text-[14px] font-semibold tracking-tight">
-            <Link href="/editor/dashboard" className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-black transition-colors">
+            <Link href={dashboardPath} className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-black transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <span className="text-zinc-400">Workspace</span>
@@ -334,9 +358,9 @@ function EditorFormContent() {
               initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: fluidEase, delay: 0.1 }}
               className="lg:col-span-4"
             >
-              <div className="space-y-8 sticky top-[100px] bg-white border border-zinc-200/60 p-6 rounded-xl shadow-sm">
+              <div className="space-y-8 sticky top-[100px] bg-[#f2f2f2] border border-zinc-200/60 p-6 rounded-xl shadow-sm">
                 
-                <h3 className="text-[14px] font-bold tracking-wide uppercase text-black border-b border-zinc-100 pb-4">
+                <h3 className="text-[14px] font-bold tracking-wide uppercase text-black border-b border-zinc-200/80 pb-4">
                   Settings
                 </h3>
 
@@ -354,7 +378,7 @@ function EditorFormContent() {
                       <div className="w-full h-full relative">
                         <img src={coverImageBase64} alt="Preview" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
-                          <span className="text-[12px] font-bold text-black flex items-center gap-2 bg-white px-4 py-2 rounded-md shadow-sm">
+                          <span className="text-[12px] font-bold text-black flex items-center gap-2 bg-[#f2f2f2] px-4 py-2 rounded-md shadow-sm">
                             <Camera className="w-4 h-4" /> Change
                           </span>
                           <button
@@ -381,7 +405,7 @@ function EditorFormContent() {
                   <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-3 block">Excerpt</label>
                   <textarea 
                     {...register("excerpt")} rows="3"
-                    className="w-full bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] text-black outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 resize-none placeholder-zinc-400"
+                    className="w-full bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] text-black outline-none focus:bg-[#f2f2f2] focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 resize-none placeholder-zinc-400"
                     placeholder="Brief summary..."
                   />
                   <AnimatePresence>
@@ -398,7 +422,7 @@ function EditorFormContent() {
                   <div className="relative">
                     <select 
                       {...register("categoryId")}
-                      className="w-full appearance-none bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] font-medium text-black outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 cursor-pointer"
+                      className="w-full appearance-none bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] font-medium text-black outline-none focus:bg-[#f2f2f2] focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 cursor-pointer"
                     >
                       <option value="">Select category...</option>
                       {categories?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
@@ -421,8 +445,8 @@ function EditorFormContent() {
                           key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
                           className={`px-3 py-1.5 rounded-md text-[12px] font-bold tracking-wide transition-all duration-200 cursor-pointer outline-none border ${
                             isSelected 
-                              ? 'bg-black text-white border-black shadow-sm' 
-                              : 'bg-white text-zinc-500 hover:text-black border-zinc-200 hover:border-zinc-300'
+                              ? 'bg-black text-[#f2f2f2] border-black shadow-sm' 
+                              : 'bg-[#f2f2f2] text-zinc-500 hover:text-black border-zinc-200 hover:border-zinc-300'
                           }`}
                         >
                           {tag.name}
@@ -433,11 +457,11 @@ function EditorFormContent() {
                 </div>
 
                 {/* PUBLISHING ACTIONS */}
-                <div className="pt-6 mt-6 border-t border-zinc-100 flex flex-col gap-3">
+                <div className="pt-6 mt-6 border-t border-zinc-200/80 flex flex-col gap-3">
                   <button 
                     onClick={handleSubmit(onSubmit("PUBLISHED"))}
                     disabled={isPending || user?.role === 'WRITER'}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white rounded-lg text-[13px] font-bold active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-[#f2f2f2] rounded-lg text-[13px] font-bold active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none shadow-sm"
                     title={user?.role === 'WRITER' ? "Writers can only save drafts." : ""}
                   >
                     {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -447,7 +471,7 @@ function EditorFormContent() {
                   <button 
                     onClick={handleSubmit(onSubmit("DRAFT"))}
                     disabled={isPending}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-white border border-zinc-200 text-zinc-600 hover:text-black hover:border-zinc-300 hover:bg-zinc-50 rounded-lg text-[13px] font-bold active:scale-[0.98] transition-all disabled:opacity-50 outline-none"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-[#f2f2f2] border border-zinc-200 text-zinc-600 hover:text-black hover:border-zinc-300 hover:bg-zinc-50 rounded-lg text-[13px] font-bold active:scale-[0.98] transition-all disabled:opacity-50 outline-none"
                   >
                     {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Save Draft
