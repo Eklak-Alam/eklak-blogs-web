@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { FaGithub, FaLinkedin } from "react-icons/fa6";
+import Image from "next/image";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -116,14 +117,21 @@ export default function Navbar() {
       >
         <div className="w-full px-6 md:px-12 h-16 flex items-center justify-between max-w-[1400px] mx-auto">
           <Link
-            href="/"
-            className="flex items-center gap-2 z-[60]"
-            onClick={() => setIsOpen(false)}
-          >
-            <span className="text-[22px] font-bold text-zinc-900 tracking-tight transition-opacity duration-300 hover:opacity-80">
-              Eklak.
-            </span>
-          </Link>
+  href="/"
+  className="flex items-center z-[60] transition-opacity duration-300 hover:opacity-80"
+  onClick={() => setIsOpen(false)}
+>
+  <Image
+    src="/logo-new-black.png" 
+    alt="Eklak Logo" 
+    // Kept the internal resolution high so it stays crisp
+    width={60} 
+    height={40} 
+    // 👇 FIXED: Much smaller, tighter width. 50px on mobile, 70px on desktop.
+    className="object-contain" 
+    priority 
+  />
+</Link>
 
           <nav className="hidden lg:flex items-center gap-8 relative h-full">
             {navLinks.map((link) => {

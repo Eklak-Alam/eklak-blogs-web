@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, AlertCircle, ArrowLeft } from "lucide-react";
 
 import { useForgotPasswordMutation } from "@/hooks/mutations/useAuthMutations";
+import Image from "next/image";
 
 // Strict Zod Validation Schema
 const forgotSchema = z.object({
@@ -77,17 +78,28 @@ export default function ForgotPasswordPage() {
       >
         
         {/* Header */}
-        <motion.div variants={itemVariants} className="mb-8">
-          <Link href="/login" className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 text-zinc-500 hover:text-black transition-colors mb-6 outline-none">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <h1 className="text-[26px] font-bold tracking-tight text-black mb-2">
-            Reset Password
-          </h1>
-          <p className="text-[14px] text-zinc-500 font-medium leading-relaxed">
-            Enter your email address and we'll send you a link to securely reset your password.
-          </p>
-        </motion.div>
+          <motion.div variants={itemVariants} className="mb-8 flex flex-col items-start w-full">
+            
+            {/* TOP ROW: Back Button & Logo */}
+            <div className="flex items-center justify-center w-full mb-4">
+              <Image
+                src="/logo-new-black.png"
+                alt="Eklak Logo"
+                width={60}
+                height={60}
+                priority
+                className="w-[60px] md:w-[85px] h-auto object-contain" 
+              />
+            </div>
+
+            <h1 className="text-[26px] font-bold tracking-tight text-black mb-2">
+              Reset Password
+            </h1>
+            <p className="text-[14px] text-zinc-500 font-medium leading-relaxed">
+              Enter your email address and we'll send you a link to securely reset your password.
+            </p>
+            
+          </motion.div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           

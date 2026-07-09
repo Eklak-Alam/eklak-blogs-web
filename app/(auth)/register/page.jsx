@@ -13,6 +13,7 @@ import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { useRegisterMutation } from "@/hooks/mutations/useAuthMutations";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getRedirectPath } from "@/lib/utils/authRoutes";
+import Image from "next/image";
 
 // 1. Strict Zod Validation Schema
 const registerSchema = z.object({
@@ -118,13 +119,25 @@ export default function RegisterPage() {
         className="w-full max-w-[380px] flex flex-col bg-white p-8 md:p-10 rounded-2xl border border-zinc-200/60 shadow-sm"
       >
         {/* Header */}
-        <motion.div variants={itemVariants} className="mb-5">
+        <motion.div variants={itemVariants} className="mb-8 flex flex-col items-center w-full">
+          
+          {/* BRAND LOGO - Matching the Login screen exactly */}
+          <Image
+            src="/logo-new-black.png"
+            alt="Eklak Logo"
+            width={160}
+            height={60}
+            priority
+            className="w-[60px] md:w-[85px] h-auto object-contain mb-6" 
+          />
+
           <h1 className="text-[26px] font-bold tracking-tight text-black mb-1.5">
             Create Account
           </h1>
           <p className="text-[14px] text-zinc-500 font-medium">
             Enter your details to get started.
           </p>
+          
         </motion.div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

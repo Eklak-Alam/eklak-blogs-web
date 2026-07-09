@@ -13,6 +13,7 @@ import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { useLoginMutation } from "@/hooks/mutations/useAuthMutations";
 import { useAuthStore } from "@/store/useAuthStore";
 import { getRedirectPath } from "@/lib/utils/authRoutes";
+import Image from "next/image";
 
 // 1. ZOD SCHEMA
 const loginSchema = z.object({
@@ -116,13 +117,25 @@ function LoginForm() {
         className="w-full max-w-[380px] flex flex-col bg-white p-8 md:p-10 rounded-2xl border border-zinc-200/60 shadow-sm"
       >
         {/* Header */}
-        <motion.div variants={itemVariants} className="mb-8">
+        <motion.div variants={itemVariants} className="mb-8 flex flex-col items-center">
+          
+          {/* BRAND LOGO */}
+          <Image
+            src="/logo-new-black.png"
+            alt="Eklak Logo"
+            width={60} // High internal resolution for crispness
+            height={60}
+            priority // Good to have on auth pages so the logo pops instantly
+            className="w-[60px] md:w-[85px] h-auto object-contain mb-4" // Slightly larger for the login context, with nice spacing below
+          />
+
           <h1 className="text-[26px] font-bold tracking-tight text-black mb-1.5">
             Welcome back
           </h1>
           <p className="text-[14px] text-zinc-500 font-medium">
             Enter your credentials to sign in.
           </p>
+          
         </motion.div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

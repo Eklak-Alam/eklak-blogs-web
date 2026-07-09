@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 
 import { useResetPasswordMutation } from "@/hooks/mutations/useAuthMutations";
+import Image from "next/image";
 
 // Strict Zod Validation Schema
 const resetSchema = z.object({
@@ -88,17 +89,37 @@ function ResetPasswordForm() {
       className="w-full max-w-[380px] flex flex-col bg-white p-8 md:p-10 rounded-2xl border border-zinc-200/60 shadow-sm"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="mb-8">
-        <Link href="/forgot-password" className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/80 text-zinc-500 hover:text-black transition-colors mb-6 outline-none cursor-pointer">
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <h1 className="text-[26px] font-bold tracking-tight text-black mb-1.5">
-          Establish New Key
-        </h1>
-        <p className="text-[14px] text-zinc-500 font-medium">
-          Input your 6-digit recovery code and a secure new password.
-        </p>
-      </motion.div>
+<motion.div variants={itemVariants} className="mb-8 flex flex-col items-center w-full">
+  
+  {/* 1. LOGO ALONE AT THE TOP */}
+  <Image
+    src="/logo-new-black.png"
+    alt="Eklak Logo"
+    width={60}
+    height={60}
+    priority
+    className="w-[60px] md:w-[85px] h-auto object-contain mb-4" 
+  />
+
+  {/* 2. ARROW & HEADING ON THE SAME ROW */}
+  <div className="flex items-center gap-7 mb-2 w-full">
+    <Link 
+      href="/forgot-password" 
+      className="inline-flex shrink-0 items-center justify-center w-8 h-8 rounded-lg bg-[#f2f2f2] hover:bg-[#e5e5e5] border border-zinc-200/80 text-zinc-500 hover:text-black transition-colors outline-none cursor-pointer"
+    >
+      <ArrowLeft className="w-4 h-4" />
+    </Link>
+    <h1 className="text-[26px] font-bold tracking-tight text-black leading-none mt-1">
+      Establish New Key
+    </h1>
+  </div>
+
+  {/* 3. SUBTITLE */}
+  <p className="text-[14px] text-zinc-500 font-medium">
+    Input your 6-digit recovery code and a secure new password.
+  </p>
+  
+</motion.div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         
