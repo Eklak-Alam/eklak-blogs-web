@@ -8,7 +8,9 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Shield, PenTool, Bookmark, Settings, 
-  LogOut, Loader2, ArrowRight, MessageSquare, Lock, Trash2, X, Camera, ArrowLeft, Heart, ImagePlus
+  LogOut, Loader2, ArrowRight, MessageSquare, Lock, 
+  Trash2, X, Camera, ArrowLeft, Heart, ImagePlus, 
+  LayoutDashboard, Home, ChevronRight, Edit3
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,12 +25,17 @@ import {
 import { useGetMyBookmarksQuery, useGetMyLikesQuery } from "@/hooks/queries/useUserQueries";
 import { useToggleBookmarkMutation, useToggleLikeMutation } from "@/hooks/mutations/useInteractionMutations";
 
-// Fluid easing curve for buttery animations
-const fluidEase = [0.16, 1, 0.3, 1];
+// Fluid easing for high-end cinematic feel
+const fluidEase = [0.25, 0.1, 0.25, 1];
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: fluidEase } }
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: fluidEase } }
 };
 
 export default function DashboardPage() {
@@ -43,18 +50,24 @@ export default function DashboardPage() {
 
   const userData = response?.user || response?.data?.user;
 
+  // Tabs for main content area
+  const [activeTab, setActiveTab] = useState("SAVED");
+
+  // Pagination & Data: Bookmarks
   const [bookmarkPage, setBookmarkPage] = useState(1);
   const { data: bookmarksRes, isLoading: isBookmarksLoading } = useGetMyBookmarksQuery({ page: bookmarkPage, limit: 5 });
   const bookmarksList = bookmarksRes?.bookmarks || bookmarksRes?.data?.bookmarks || [];
   const bookmarksPagination = bookmarksRes?.pagination || bookmarksRes?.data?.pagination || {};
   const { mutate: toggleBookmark, isPending: isTogglingBookmark } = useToggleBookmarkMutation();
 
+  // Pagination & Data: Likes
   const [likePage, setLikePage] = useState(1);
   const { data: likesRes, isLoading: isLikesLoading } = useGetMyLikesQuery({ page: likePage, limit: 5 });
   const likesList = likesRes?.likes || likesRes?.data?.likes || [];
   const likesPagination = likesRes?.pagination || likesRes?.data?.pagination || {};
   const { mutate: toggleLike, isPending: isTogglingLike } = useToggleLikeMutation();
 
+  // Settings Panel State
   const [activeSetting, setActiveSetting] = useState(null); 
   const [avatarBase64, setAvatarBase64] = useState(null);
 
@@ -81,9 +94,7 @@ export default function DashboardPage() {
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { 'image/*': [] },
-    maxFiles: 1,
+    onDrop, accept: { 'image/*': [] }, maxFiles: 1,
   });
 
   const onUpdateProfile = (data) => {
@@ -118,24 +129,24 @@ export default function DashboardPage() {
   };
 
   const handleDeleteAccount = () => {
-    if (window.confirm("Are you sure? This action will permanently delete your account and all your data.")) {
+    if (window.confirm("Are you absolute sure? This will permanently delete your account and all data.")) {
       deleteAccount();
     }
   };
 
   if (!isInitialized || isLoading) {
     return (
-      <div className="min-h-screen w-full flex justify-center items-center bg-[#f2f2f2]">
-        <Loader2 className="w-6 h-6 text-zinc-400 animate-spin" strokeWidth={2} />
+      <div className="min-h-screen w-full flex justify-center items-center bg-[#fafafa]">
+        <Loader2 className="w-6 h-6 text-black animate-spin" strokeWidth={2.5} />
       </div>
     );
   }
 
   if (isError || !userData) {
     return (
-      <div className="min-h-screen w-full flex flex-col justify-center items-center bg-[#f2f2f2]">
-        <p className="text-sm text-zinc-500 mb-4">Could not load your profile.</p>
-        <button onClick={() => router.push('/login')} className="px-6 py-2.5 bg-zinc-900 text-white rounded-full text-sm font-medium hover:bg-zinc-800 transition-colors">
+      <div className="min-h-screen w-full flex flex-col justify-center items-center bg-[#fafafa]">
+        <p className="text-[14px] text-zinc-500 font-medium mb-4">Could not load your profile.</p>
+        <button onClick={() => router.push('/login')} className="px-6 py-2.5 bg-black text-white rounded-lg text-sm font-bold transition-colors">
           Log in again
         </button>
       </div>
@@ -143,429 +154,398 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen w-full relative bg-[#f2f2f2] text-zinc-900 pt-12 pb-24 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#fafafa] flex flex-col md:flex-row font-sans text-zinc-900">
       
-      <div className="relative z-10 max-w-[1200px] mx-auto w-full">
-        
-        {/* ======================================= */}
-        {/* HEADER SECTION                          */}
-        {/* ======================================= */}
-        <motion.div 
-          initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 bg-white p-6 md:p-8 rounded-[32px] shadow-sm shadow-zinc-200/50"
+      {/* ======================================= */}
+      {/* DESKTOP SIDEBAR                         */}
+      {/* ======================================= */}
+      <aside className="hidden md:flex flex-col w-[280px] lg:w-[320px] fixed inset-y-0 left-0 bg-white border-r border-zinc-200/50 p-6 overflow-y-auto z-30">
+        <div className="mb-10">
+          <Link href="/" className="inline-block outline-none">
+            <h2 className="text-[24px] font-black tracking-tighter text-black hover:opacity-70 transition-opacity">
+              Eklak.
+            </h2>
+          </Link>
+          <p className="text-[13px] text-zinc-400 font-medium mt-1">User Dashboard</p>
+        </div>
+
+        <nav className="flex flex-col gap-1.5 mb-10 flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-3 px-3">Menu</p>
+          <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-zinc-500 hover:text-black hover:bg-zinc-50 transition-all outline-none">
+            <Home className="w-4 h-4" /> Home
+          </Link>
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold bg-zinc-100/80 text-black shadow-sm border border-zinc-200/50">
+            <LayoutDashboard className="w-4 h-4" /> Dashboard
+          </div>
+          {userData.role !== "USER" && (
+            <Link href="/writer/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-zinc-500 hover:text-black hover:bg-zinc-50 transition-all outline-none mt-2">
+              <PenTool className="w-4 h-4" /> Writer Hub
+            </Link>
+          )}
+          {userData.role === "ADMIN" && (
+            <Link href="/admin/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 transition-all outline-none mt-2">
+              <Shield className="w-4 h-4" /> Admin Panel
+            </Link>
+          )}
+        </nav>
+
+        <button 
+          onClick={() => logoutUser()}
+          disabled={isLoggingOut}
+          className="mt-auto flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-bold text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-all outline-none w-full"
         >
-          <div className="flex items-center gap-6">
-            {/* Avatar: Soft Circle */}
-            <motion.div variants={fadeUp} className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-zinc-50 flex-shrink-0 bg-zinc-100 relative overflow-hidden shadow-sm">
-              {userData.image ? (
-                <img src={userData.image} alt={userData.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center font-medium text-3xl text-zinc-400 bg-zinc-100">
-                  {userData.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </motion.div>
-            
-            <div className="flex flex-col">
-              <motion.div variants={fadeUp} className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-900">
-                  {userData.name}
-                </h1>
-                <span className="px-3 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full bg-zinc-100 text-zinc-500">
-                  {userData.role}
-                </span>
-              </motion.div>
-              <motion.p variants={fadeUp} className="text-zinc-500 text-sm font-medium">
-                {userData.email}
-              </motion.p>
-            </div>
+          {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />} Log Out
+        </button>
+      </aside>
+
+      {/* ======================================= */}
+      {/* MAIN CONTENT AREA                       */}
+      {/* ======================================= */}
+      <div className="flex-1 md:ml-[280px] lg:ml-[320px] flex flex-col w-full min-h-screen">
+        
+        {/* Top Navbar */}
+        <header className="flex h-[72px] bg-white/80 backdrop-blur-md border-b border-zinc-200/50 items-center justify-between px-6 lg:px-12 sticky top-0 z-20">
+          <div className="flex items-center gap-2 text-[14px] font-semibold tracking-tight">
+            <span className="text-zinc-400">Account</span>
+            <span className="text-zinc-300">/</span>
+            <span className="text-black">Overview</span>
           </div>
 
-          <motion.button 
-            variants={fadeUp}
-            onClick={() => logoutUser()}
-            disabled={isLoggingOut}
-            className="flex items-center gap-2 px-5 py-2.5 bg-zinc-100 hover:bg-red-50 text-zinc-600 hover:text-red-600 text-sm font-medium rounded-full transition-colors outline-none disabled:opacity-50"
-          >
-            {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-            Log Out
-          </motion.button>
-        </motion.div>
+          <div className="flex flex-items gap-3 text-right">
+             <div className="hidden sm:block">
+               <p className="text-[13px] font-bold text-black">{userData.name}</p>
+               <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{userData.role}</p>
+             </div>
+             <div className="w-9 h-9 rounded-full bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-500 overflow-hidden shrink-0 shadow-sm">
+               {userData.image ? <img src={userData.image} alt="Profile" className="w-full h-full object-cover" /> : <User className="w-4 h-4" />}
+             </div>
+          </div>
+        </header>
 
-        {/* ======================================= */}
-        {/* DASHBOARD GRID                          */}
-        {/* ======================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-          
-          {/* ======================================= */}
-          {/* LEFT COLUMN: Main Features & Content    */}
-          {/* ======================================= */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: fluidEase, delay: 0.1 }}
-            className="lg:col-span-8 flex flex-col gap-6 lg:gap-8"
-          >
+        {/* Dashboard Grid */}
+        <main className="p-6 lg:p-12 max-w-[1200px] mx-auto w-full flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
             
-            {/* WRITER WORKSPACE (If not USER) */}
-            {userData.role !== "USER" && (
-              <div className="bg-white p-8 md:p-10 rounded-[32px] shadow-sm shadow-zinc-200/50">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-[#f2f2f2] rounded-full text-zinc-900">
-                    <PenTool className="w-5 h-5" />
+            {/* LEFT COLUMN: Main Features & Content */}
+            <motion.div 
+              initial="hidden" animate="visible" variants={containerVariants}
+              className="lg:col-span-8 flex flex-col gap-8"
+            >
+              {/* Profile Header Card */}
+              <motion.div variants={itemVariants} className="bg-white border border-zinc-200/60 p-6 md:p-8 rounded-2xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex items-center gap-5">
+                  <div className="w-20 h-20 rounded-full border-2 border-zinc-100 flex-shrink-0 bg-zinc-50 relative overflow-hidden">
+                    {userData.image ? (
+                      <img src={userData.image} alt={userData.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-bold text-2xl text-zinc-400">
+                        {userData.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </div>
-                  <h2 className="text-xl font-semibold text-zinc-900">Writer's Workspace</h2>
-                </div>
-                <p className="text-sm text-zinc-500 mb-8 max-w-md">
-                  Manage your drafts, publish new stories, and see how your posts are performing.
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <Link href="/editor/dashboard" className="px-6 py-3 bg-zinc-900 text-white text-sm font-medium rounded-full hover:bg-zinc-800 transition-colors shadow-md shadow-zinc-900/10 flex items-center gap-2">
-                    Write New Post <ArrowRight className="w-4 h-4" />
-                  </Link>
-                  <Link href="/writer/dashboard" className="px-6 py-3 bg-[#f2f2f2] text-zinc-700 hover:text-zinc-900 text-sm font-medium rounded-full hover:bg-zinc-200 transition-colors">
-                    Manage Posts
-                  </Link>
-                  {(userData.role === "AUTHOR" || userData.role === "ADMIN") && (
-                    <Link href="/author/dashboard" className="px-6 py-3 bg-[#f2f2f2] text-zinc-700 hover:text-zinc-900 text-sm font-medium rounded-full hover:bg-zinc-200 transition-colors">
-                      Author Tools
-                    </Link>
-                  )}
-                  {userData.role === "ADMIN" && (
-                    <Link href="/admin/dashboard" className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-medium rounded-full transition-colors">
-                      Admin Panel
-                    </Link>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* QUICK STATS */}
-            <div className="grid grid-cols-2 gap-4 md:gap-6">
-              <div className="bg-white p-6 rounded-[32px] shadow-sm shadow-zinc-200/50 flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 bg-[#f2f2f2] rounded-full flex items-center justify-center text-zinc-700 mb-3">
-                  <Bookmark className="w-5 h-5" />
-                </div>
-                <p className="text-3xl font-semibold text-zinc-900 mb-1">{userData._count?.bookmarks || 0}</p>
-                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Saved Posts</p>
-              </div>
-              <div className="bg-white p-6 rounded-[32px] shadow-sm shadow-zinc-200/50 flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 bg-[#f2f2f2] rounded-full flex items-center justify-center text-zinc-700 mb-3">
-                  <MessageSquare className="w-5 h-5" />
-                </div>
-                <p className="text-3xl font-semibold text-zinc-900 mb-1">{userData._count?.comments || 0}</p>
-                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Comments Made</p>
-              </div>
-            </div>
-
-            {/* SAVED ARTICLES (BOOKMARKS) */}
-            <div className="bg-white p-6 md:p-10 rounded-[32px] shadow-sm shadow-zinc-200/50">
-              <h2 className="text-lg font-semibold text-zinc-900 flex items-center gap-2 mb-6">
-                <Bookmark className="w-5 h-5" /> Saved Posts
-              </h2>
-
-              {isBookmarksLoading ? (
-                <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-zinc-300" /></div>
-              ) : bookmarksList.length === 0 ? (
-                <div className="py-12 text-center bg-[#f2f2f2] rounded-[24px]">
-                  <p className="text-sm text-zinc-500">You haven't saved any posts yet.</p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-6">
-                  {bookmarksList.map(post => (
-                    <div key={post.bookmarkId} className="group flex flex-col sm:flex-row gap-5 pb-6 border-b border-zinc-100 last:border-0 last:pb-0">
-                      {/* Soft Image Frame */}
-                      <div className="w-full sm:w-36 aspect-video flex-shrink-0 bg-[#f2f2f2] rounded-[16px] overflow-hidden relative">
-                        {post.coverImage ? (
-                          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-400"><ImagePlus className="w-6 h-6" /></div>
-                        )}
-                      </div>
-                      
-                      <div className="flex-1 flex flex-col justify-center">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-zinc-400">
-                            Saved on {new Date(post.bookmarkedAt).toLocaleDateString()}
-                          </span>
-                          <button 
-                            onClick={() => toggleBookmark(post.id)}
-                            disabled={isTogglingBookmark}
-                            className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 outline-none"
-                            title="Remove Bookmark"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <Link href={`/blog/${post.slug}`} className="text-lg font-medium text-zinc-900 hover:text-zinc-600 transition-colors line-clamp-2 mb-2">
-                          {post.title}
-                        </Link>
-                        <p className="text-sm text-zinc-500 line-clamp-2">{post.excerpt}</p>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Bookmarks Pagination */}
-                  {bookmarksPagination?.totalPages > 1 && (
-                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-zinc-100">
-                      <button onClick={() => setBookmarkPage(p => Math.max(1, p - 1))} disabled={bookmarkPage === 1} className="px-4 py-2 text-sm font-medium text-zinc-700 bg-[#f2f2f2] rounded-full disabled:opacity-50 hover:bg-zinc-200 transition-colors">
-                        Previous
-                      </button>
-                      <span className="text-xs font-medium text-zinc-500">
-                        Page {bookmarkPage} of {bookmarksPagination.totalPages}
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h1 className="text-2xl font-bold tracking-tight text-black">{userData.name}</h1>
+                      <span className="px-2.5 py-0.5 text-[10px] font-bold tracking-widest uppercase rounded bg-zinc-100 text-zinc-600 border border-zinc-200/60">
+                        {userData.role}
                       </span>
-                      <button onClick={() => setBookmarkPage(p => Math.min(bookmarksPagination.totalPages, p + 1))} disabled={bookmarkPage === bookmarksPagination.totalPages} className="px-4 py-2 text-sm font-medium text-zinc-700 bg-[#f2f2f2] rounded-full disabled:opacity-50 hover:bg-zinc-200 transition-colors">
-                        Next
-                      </button>
                     </div>
-                  )}
+                    <p className="text-[14px] text-zinc-500 font-medium">{userData.email}</p>
+                  </div>
                 </div>
-              )}
-            </div>
-
-            {/* LIKED ARTICLES (LIKES) */}
-            <div className="bg-white p-6 md:p-10 rounded-[32px] shadow-sm shadow-zinc-200/50">
-              <h2 className="text-lg font-semibold text-zinc-900 flex items-center gap-2 mb-6">
-                <Heart className="w-5 h-5 text-red-500" /> Liked Posts
-              </h2>
-
-              {isLikesLoading ? (
-                <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-zinc-300" /></div>
-              ) : likesList.length === 0 ? (
-                <div className="py-12 text-center bg-[#f2f2f2] rounded-[24px]">
-                  <p className="text-sm text-zinc-500">You haven't liked any posts yet.</p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-6">
-                  {likesList.map(post => (
-                    <div key={post.likeId} className="group flex flex-col sm:flex-row gap-5 pb-6 border-b border-zinc-100 last:border-0 last:pb-0">
-                      {/* Soft Image Frame */}
-                      <div className="w-full sm:w-36 aspect-video flex-shrink-0 bg-[#f2f2f2] rounded-[16px] overflow-hidden relative">
-                        {post.coverImage ? (
-                          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-400"><ImagePlus className="w-6 h-6" /></div>
-                        )}
-                      </div>
-                      
-                      <div className="flex-1 flex flex-col justify-center">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-medium text-zinc-400">
-                            Liked on {new Date(post.likedAt).toLocaleDateString()}
-                          </span>
-                          <button 
-                            onClick={() => toggleLike({ postId: post.id })}
-                            disabled={isTogglingLike}
-                            className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 outline-none"
-                            title="Unlike Post"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <Link href={`/blog/${post.slug}`} className="text-lg font-medium text-zinc-900 hover:text-zinc-600 transition-colors line-clamp-2 mb-2">
-                          {post.title}
-                        </Link>
-                        <p className="text-sm text-zinc-500 line-clamp-2">{post.excerpt}</p>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Likes Pagination */}
-                  {likesPagination?.totalPages > 1 && (
-                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-zinc-100">
-                      <button onClick={() => setLikePage(p => Math.max(1, p - 1))} disabled={likePage === 1} className="px-4 py-2 text-sm font-medium text-zinc-700 bg-[#f2f2f2] rounded-full disabled:opacity-50 hover:bg-zinc-200 transition-colors">
-                        Previous
-                      </button>
-                      <span className="text-xs font-medium text-zinc-500">
-                        Page {likePage} of {likesPagination.totalPages}
-                      </span>
-                      <button onClick={() => setLikePage(p => Math.min(likesPagination.totalPages, p + 1))} disabled={likePage === likesPagination.totalPages} className="px-4 py-2 text-sm font-medium text-zinc-700 bg-[#f2f2f2] rounded-full disabled:opacity-50 hover:bg-zinc-200 transition-colors">
-                        Next
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* ======================================= */}
-          {/* RIGHT COLUMN: Parameters / Settings     */}
-          {/* ======================================= */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: fluidEase, delay: 0.2 }}
-            className="lg:col-span-4"
-          >
-            <div className="bg-white p-6 md:p-8 rounded-[32px] shadow-sm shadow-zinc-200/50 min-h-[450px] relative overflow-hidden sticky top-[100px]">
-              
-              <AnimatePresence mode="wait">
                 
-                {/* DEFAULT MENU */}
-                {!activeSetting && (
-                  <motion.div 
-                    key="menu"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-                    className="flex flex-col h-full"
+                <div className="flex gap-4">
+                  <div className="text-center px-4">
+                    <p className="text-2xl font-black text-black">{userData._count?.bookmarks || 0}</p>
+                    <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Saved</p>
+                  </div>
+                  <div className="w-px bg-zinc-200"></div>
+                  <div className="text-center px-4">
+                    <p className="text-2xl font-black text-black">{userData._count?.comments || 0}</p>
+                    <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Comments</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Feed: Saved & Liked Tabs */}
+              <motion.div variants={itemVariants} className="bg-white border border-zinc-200/60 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+                
+                {/* Tab Header */}
+                <div className="flex border-b border-zinc-100 bg-zinc-50/50">
+                  <button 
+                    onClick={() => setActiveTab("SAVED")}
+                    className={`flex-1 py-4 text-[13px] font-bold tracking-wide transition-colors outline-none flex items-center justify-center gap-2 ${
+                      activeTab === "SAVED" ? "text-black bg-white border-b-2 border-black" : "text-zinc-500 hover:text-black hover:bg-zinc-100/50"
+                    }`}
                   >
-                    <h3 className="text-lg font-semibold text-zinc-900 mb-6 flex items-center gap-2">
-                      <Settings className="w-5 h-5" /> Settings
-                    </h3>
-                    
-                    <div className="flex flex-col gap-3">
-                      <button 
-                        onClick={() => setActiveSetting('profile')}
-                        className="group flex items-center justify-between p-4 bg-[#f2f2f2] hover:bg-zinc-200/60 transition-colors rounded-[20px] outline-none text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-white rounded-full text-zinc-600 shadow-sm"><User className="w-4 h-4" /></div>
-                          <div>
-                            <h4 className="text-sm font-medium text-zinc-900 mb-0.5">Edit Profile</h4>
-                            <p className="text-xs text-zinc-500">Change your name and photo</p>
-                          </div>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 group-hover:translate-x-1 transition-all" />
-                      </button>
-
-                      <button 
-                        onClick={() => setActiveSetting('password')}
-                        className="group flex items-center justify-between p-4 bg-[#f2f2f2] hover:bg-zinc-200/60 transition-colors rounded-[20px] outline-none text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-white rounded-full text-zinc-600 shadow-sm"><Lock className="w-4 h-4" /></div>
-                          <div>
-                            <h4 className="text-sm font-medium text-zinc-900 mb-0.5">Password</h4>
-                            <p className="text-xs text-zinc-500">Update your security key</p>
-                          </div>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 group-hover:translate-x-1 transition-all" />
-                      </button>
-                    </div>
-
-                    <div className="mt-auto pt-10">
-                      <button 
-                        onClick={handleDeleteAccount}
-                        className="w-full flex items-center justify-center gap-2 py-4 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium rounded-[20px] transition-colors outline-none"
-                      >
-                        {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                        Delete Account
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* EDIT PROFILE FORM */}
-                {activeSetting === 'profile' && (
-                  <motion.form 
-                    key="profile"
-                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}
-                    onSubmit={handleProfileSubmit(onUpdateProfile)} 
-                    className="flex flex-col h-full"
+                    <Bookmark className="w-4 h-4" /> Saved Posts
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab("LIKED")}
+                    className={`flex-1 py-4 text-[13px] font-bold tracking-wide transition-colors outline-none flex items-center justify-center gap-2 ${
+                      activeTab === "LIKED" ? "text-black bg-white border-b-2 border-black" : "text-zinc-500 hover:text-black hover:bg-zinc-100/50"
+                    }`}
                   >
-                    <div className="flex items-center gap-3 mb-8">
-                      <button type="button" onClick={() => { setActiveSetting(null); setAvatarBase64(null); }} className="p-2 bg-[#f2f2f2] hover:bg-zinc-200 rounded-full text-zinc-600 transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
-                      </button>
-                      <h3 className="text-lg font-semibold text-zinc-900">Edit Profile</h3>
-                    </div>
+                    <Heart className="w-4 h-4" /> Liked Posts
+                  </button>
+                </div>
 
-                    {/* Image Upload */}
-                    <div className="mb-6 flex justify-center">
-                      <div {...getRootProps()} 
-                        className={`border-2 border-dashed rounded-full text-center cursor-pointer transition-all duration-300 overflow-hidden relative group w-24 h-24 ${isDragActive ? 'border-zinc-400 bg-zinc-100' : 'border-zinc-200 hover:border-zinc-300 bg-[#f2f2f2]'}`}
-                      >
-                        <input {...getInputProps()} />
-                        {(avatarBase64 || userData.image) ? (
-                          <div className="w-full h-full relative">
-                            <img src={avatarBase64 || userData.image} alt="Preview" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-white/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Camera className="w-5 h-5 text-zinc-800" />
+                {/* Tab Content: SAVED */}
+                {activeTab === "SAVED" && (
+                  <div className="p-6 md:p-8 flex-1 flex flex-col">
+                    {isBookmarksLoading ? (
+                      <div className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-black" /></div>
+                    ) : bookmarksList.length === 0 ? (
+                      <div className="flex-1 flex flex-col items-center justify-center text-center">
+                        <Bookmark className="w-10 h-10 text-zinc-200 mb-4" />
+                        <p className="text-[15px] font-bold text-black mb-1">No saved posts</p>
+                        <p className="text-[13px] text-zinc-500">Articles you bookmark will appear here.</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-6">
+                        {bookmarksList.map(post => (
+                          <div key={post.bookmarkId} className="group flex flex-col sm:flex-row gap-5 pb-6 border-b border-zinc-100 last:border-0 last:pb-0">
+                            <div className="w-full sm:w-40 aspect-video flex-shrink-0 bg-zinc-100 rounded-lg overflow-hidden relative border border-zinc-200/50">
+                              {post.coverImage ? (
+                                <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-zinc-300"><ImagePlus className="w-5 h-5" /></div>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1 flex flex-col justify-center min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
+                                  {new Date(post.bookmarkedAt).toLocaleDateString()}
+                                </span>
+                                <button onClick={() => toggleBookmark(post.id)} disabled={isTogglingBookmark} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 outline-none">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                              <Link href={`/blog/${post.slug}`} className="text-[16px] font-bold text-black hover:text-zinc-600 transition-colors line-clamp-2 mb-1.5 leading-snug">
+                                {post.title}
+                              </Link>
+                              <p className="text-[13px] text-zinc-500 font-medium line-clamp-2">{post.excerpt}</p>
                             </div>
                           </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-full text-zinc-400 group-hover:text-zinc-600">
-                            <Camera className="w-6 h-6" />
-                          </div>
-                        )}
+                        ))}
                       </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Full Name</label>
-                      <input 
-                        type="text" 
-                        defaultValue={userData.name}
-                        {...registerProfile("name")} 
-                        className="w-full bg-[#f2f2f2] focus:bg-white border border-transparent focus:border-zinc-300 rounded-[20px] px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-4 focus:ring-zinc-100 transition-all" 
-                      />
-                    </div>
-
-                    <div className="mb-8">
-                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Phone Number</label>
-                      <input 
-                        type="text" 
-                        defaultValue={userData.phoneNumber || ''}
-                        placeholder="Optional"
-                        {...registerProfile("phoneNumber")} 
-                        className="w-full bg-[#f2f2f2] focus:bg-white border border-transparent focus:border-zinc-300 rounded-[20px] px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-4 focus:ring-zinc-100 transition-all" 
-                      />
-                    </div>
-
-                    <button 
-                      type="submit"
-                      disabled={isUpdatingProfile} 
-                      className="mt-auto w-full py-4 bg-zinc-900 text-white text-sm font-medium rounded-full hover:bg-zinc-800 active:scale-[0.98] transition-all flex justify-center items-center gap-2 shadow-md shadow-zinc-900/10"
-                    >
-                      {isUpdatingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
-                    </button>
-                  </motion.form>
+                    )}
+                    
+                    {/* Pagination Settings */}
+                    {bookmarksPagination?.totalPages > 1 && (
+                      <div className="flex justify-between items-center mt-auto pt-6 border-t border-zinc-100">
+                        <button onClick={() => setBookmarkPage(p => Math.max(1, p - 1))} disabled={bookmarkPage === 1} className="px-4 py-2 text-[12px] font-bold text-black border border-zinc-200 rounded-lg disabled:opacity-30 hover:bg-zinc-50 transition-colors">Prev</button>
+                        <span className="text-[12px] font-bold text-zinc-400 tracking-widest">{bookmarkPage} / {bookmarksPagination.totalPages}</span>
+                        <button onClick={() => setBookmarkPage(p => Math.min(bookmarksPagination.totalPages, p + 1))} disabled={bookmarkPage === bookmarksPagination.totalPages} className="px-4 py-2 text-[12px] font-bold text-black border border-zinc-200 rounded-lg disabled:opacity-30 hover:bg-zinc-50 transition-colors">Next</button>
+                      </div>
+                    )}
+                  </div>
                 )}
 
-                {/* CHANGE PASSWORD FORM */}
-                {activeSetting === 'password' && (
-                  <motion.form 
-                    key="password"
-                    initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}
-                    onSubmit={handlePasswordSubmit(onChangePassword)} 
-                    className="flex flex-col h-full"
-                  >
-                    <div className="flex items-center gap-3 mb-8">
-                      <button type="button" onClick={() => { setActiveSetting(null); resetPasswordForm(); }} className="p-2 bg-[#f2f2f2] hover:bg-zinc-200 rounded-full text-zinc-600 transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
+                {/* Tab Content: LIKED */}
+                {activeTab === "LIKED" && (
+                  <div className="p-6 md:p-8 flex-1 flex flex-col">
+                    {isLikesLoading ? (
+                      <div className="flex-1 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-black" /></div>
+                    ) : likesList.length === 0 ? (
+                      <div className="flex-1 flex flex-col items-center justify-center text-center">
+                        <Heart className="w-10 h-10 text-zinc-200 mb-4" />
+                        <p className="text-[15px] font-bold text-black mb-1">No liked posts</p>
+                        <p className="text-[13px] text-zinc-500">Articles you like will appear here.</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-6">
+                        {likesList.map(post => (
+                          <div key={post.likeId} className="group flex flex-col sm:flex-row gap-5 pb-6 border-b border-zinc-100 last:border-0 last:pb-0">
+                            <div className="w-full sm:w-40 aspect-video flex-shrink-0 bg-zinc-100 rounded-lg overflow-hidden relative border border-zinc-200/50">
+                              {post.coverImage ? (
+                                <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-zinc-300"><ImagePlus className="w-5 h-5" /></div>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1 flex flex-col justify-center min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
+                                  {new Date(post.likedAt).toLocaleDateString()}
+                                </span>
+                                <button onClick={() => toggleLike({ postId: post.id })} disabled={isTogglingLike} className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 outline-none">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                              <Link href={`/blog/${post.slug}`} className="text-[16px] font-bold text-black hover:text-zinc-600 transition-colors line-clamp-2 mb-1.5 leading-snug">
+                                {post.title}
+                              </Link>
+                              <p className="text-[13px] text-zinc-500 font-medium line-clamp-2">{post.excerpt}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Pagination Settings */}
+                    {likesPagination?.totalPages > 1 && (
+                      <div className="flex justify-between items-center mt-auto pt-6 border-t border-zinc-100">
+                        <button onClick={() => setLikePage(p => Math.max(1, p - 1))} disabled={likePage === 1} className="px-4 py-2 text-[12px] font-bold text-black border border-zinc-200 rounded-lg disabled:opacity-30 hover:bg-zinc-50 transition-colors">Prev</button>
+                        <span className="text-[12px] font-bold text-zinc-400 tracking-widest">{likePage} / {likesPagination.totalPages}</span>
+                        <button onClick={() => setLikePage(p => Math.min(likesPagination.totalPages, p + 1))} disabled={likePage === likesPagination.totalPages} className="px-4 py-2 text-[12px] font-bold text-black border border-zinc-200 rounded-lg disabled:opacity-30 hover:bg-zinc-50 transition-colors">Next</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+
+            {/* ======================================= */}
+            {/* RIGHT COLUMN: Parameters / Settings     */}
+            {/* ======================================= */}
+            <motion.div 
+              initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: fluidEase, delay: 0.1 }}
+              className="lg:col-span-4"
+            >
+              <div className="bg-white border border-zinc-200/60 p-6 md:p-8 rounded-2xl shadow-sm min-h-[500px] relative overflow-hidden sticky top-[100px]">
+                
+                <AnimatePresence mode="wait">
+                  
+                  {/* DEFAULT MENU */}
+                  {!activeSetting && (
+                    <motion.div 
+                      key="menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+                      className="flex flex-col h-full"
+                    >
+                      <h3 className="text-[14px] font-bold tracking-wide uppercase text-black border-b border-zinc-100 pb-4 mb-6">
+                        Configuration
+                      </h3>
+                      
+                      <div className="flex flex-col gap-3">
+                        <button onClick={() => setActiveSetting('profile')} className="group flex items-center justify-between p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/50 hover:border-zinc-300 transition-all rounded-xl outline-none text-left">
+                          <div className="flex items-center gap-4">
+                            <div className="p-2.5 bg-white border border-zinc-200 rounded-md text-zinc-600 shadow-sm"><User className="w-4 h-4" /></div>
+                            <div>
+                              <h4 className="text-[14px] font-bold text-black mb-0.5">Edit Profile</h4>
+                              <p className="text-[12px] font-medium text-zinc-500">Name and avatar</p>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black group-hover:translate-x-1 transition-all" />
+                        </button>
+
+                        <button onClick={() => setActiveSetting('password')} className="group flex items-center justify-between p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200/50 hover:border-zinc-300 transition-all rounded-xl outline-none text-left">
+                          <div className="flex items-center gap-4">
+                            <div className="p-2.5 bg-white border border-zinc-200 rounded-md text-zinc-600 shadow-sm"><Lock className="w-4 h-4" /></div>
+                            <div>
+                              <h4 className="text-[14px] font-bold text-black mb-0.5">Security</h4>
+                              <p className="text-[12px] font-medium text-zinc-500">Change password</p>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black group-hover:translate-x-1 transition-all" />
+                        </button>
+                      </div>
+
+                      <div className="mt-auto pt-10">
+                        <button onClick={handleDeleteAccount} className="w-full flex items-center justify-center gap-2 py-3.5 bg-white border border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 text-[13px] font-bold rounded-lg transition-colors outline-none">
+                          {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Delete Account
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* EDIT PROFILE FORM */}
+                  {activeSetting === 'profile' && (
+                    <motion.form 
+                      key="profile" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}
+                      onSubmit={handleProfileSubmit(onUpdateProfile)} className="flex flex-col h-full"
+                    >
+                      <div className="flex items-center gap-3 mb-8 border-b border-zinc-100 pb-4">
+                        <button type="button" onClick={() => { setActiveSetting(null); setAvatarBase64(null); }} className="p-1.5 text-zinc-400 hover:text-black hover:bg-zinc-100 rounded-md transition-colors">
+                          <ArrowLeft className="w-4 h-4" />
+                        </button>
+                        <h3 className="text-[14px] font-bold tracking-wide uppercase text-black">Edit Profile</h3>
+                      </div>
+
+                      {/* Image Upload */}
+                      <div className="mb-6 flex flex-col items-center">
+                        <div {...getRootProps()} className={`border-2 border-dashed rounded-full text-center cursor-pointer transition-all duration-300 overflow-hidden relative group w-24 h-24 ${isDragActive ? 'border-zinc-400 bg-zinc-50' : 'border-zinc-300 hover:border-black bg-zinc-50/50'}`}>
+                          <input {...getInputProps()} />
+                          {(avatarBase64 || userData.image) ? (
+                            <div className="w-full h-full relative">
+                              <img src={avatarBase64 || userData.image} alt="Preview" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Edit3 className="w-5 h-5 text-white" />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-zinc-400 group-hover:text-black">
+                              <Camera className="w-6 h-6" />
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mt-3">Upload Avatar</span>
+                      </div>
+
+                      <div className="mb-5">
+                        <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Full Name</label>
+                        <input 
+                          type="text" defaultValue={userData.name} {...registerProfile("name")} 
+                          className="w-full bg-zinc-50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] text-black outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all" 
+                        />
+                      </div>
+
+                      <div className="mb-8">
+                        <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Phone Number</label>
+                        <input 
+                          type="text" defaultValue={userData.phoneNumber || ''} placeholder="Optional" {...registerProfile("phoneNumber")} 
+                          className="w-full bg-zinc-50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] text-black outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all" 
+                        />
+                      </div>
+
+                      <button type="submit" disabled={isUpdatingProfile} className="mt-auto w-full py-3.5 bg-black text-white text-[13px] font-bold rounded-lg hover:bg-zinc-800 active:scale-[0.98] transition-all flex justify-center items-center gap-2 shadow-sm">
+                        {isUpdatingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
                       </button>
-                      <h3 className="text-lg font-semibold text-zinc-900">Change Password</h3>
-                    </div>
+                    </motion.form>
+                  )}
 
-                    <div className="mb-4">
-                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Current Password</label>
-                      <input 
-                        type="password" 
-                        {...registerPassword("currentPassword", { required: true })} 
-                        className="w-full bg-[#f2f2f2] focus:bg-white border border-transparent focus:border-zinc-300 rounded-[20px] px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-4 focus:ring-zinc-100 transition-all" 
-                      />
-                    </div>
-
-                    <div className="mb-8">
-                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">New Password</label>
-                      <input 
-                        type="password" 
-                        {...registerPassword("newPassword", { required: true, minLength: 8 })} 
-                        className="w-full bg-[#f2f2f2] focus:bg-white border border-transparent focus:border-zinc-300 rounded-[20px] px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-4 focus:ring-zinc-100 transition-all" 
-                      />
-                    </div>
-
-                    <button 
-                      type="submit"
-                      disabled={isChangingPassword} 
-                      className="mt-auto w-full py-4 bg-zinc-900 text-white text-sm font-medium rounded-full hover:bg-zinc-800 active:scale-[0.98] transition-all flex justify-center items-center gap-2 shadow-md shadow-zinc-900/10"
+                  {/* CHANGE PASSWORD FORM */}
+                  {activeSetting === 'password' && (
+                    <motion.form 
+                      key="password" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.2 }}
+                      onSubmit={handlePasswordSubmit(onChangePassword)} className="flex flex-col h-full"
                     >
-                      {isChangingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update Password"}
-                    </button>
-                  </motion.form>
-                )}
+                      <div className="flex items-center gap-3 mb-8 border-b border-zinc-100 pb-4">
+                        <button type="button" onClick={() => { setActiveSetting(null); resetPasswordForm(); }} className="p-1.5 text-zinc-400 hover:text-black hover:bg-zinc-100 rounded-md transition-colors">
+                          <ArrowLeft className="w-4 h-4" />
+                        </button>
+                        <h3 className="text-[14px] font-bold tracking-wide uppercase text-black">Security</h3>
+                      </div>
 
-              </AnimatePresence>
-            </div>
-          </motion.div>
+                      <div className="mb-5">
+                        <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Current Password</label>
+                        <input 
+                          type="password" {...registerPassword("currentPassword", { required: true })} 
+                          className="w-full bg-zinc-50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] text-black outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all" 
+                        />
+                      </div>
 
-        </div>
+                      <div className="mb-8">
+                        <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">New Password</label>
+                        <input 
+                          type="password" {...registerPassword("newPassword", { required: true, minLength: 8 })} 
+                          className="w-full bg-zinc-50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] text-black outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all" 
+                        />
+                      </div>
+
+                      <button type="submit" disabled={isChangingPassword} className="mt-auto w-full py-3.5 bg-black text-white text-[13px] font-bold rounded-lg hover:bg-zinc-800 active:scale-[0.98] transition-all flex justify-center items-center gap-2 shadow-sm">
+                        {isChangingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update Password"}
+                      </button>
+                    </motion.form>
+                  )}
+
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          </div>
+        </main>
       </div>
     </div>
   );

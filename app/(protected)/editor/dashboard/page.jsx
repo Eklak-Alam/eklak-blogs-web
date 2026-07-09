@@ -9,7 +9,9 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, ImagePlus, ArrowLeft, Send, Save, 
-  Bold, Italic, Heading2, Heading3, Quote, List, ListOrdered, Camera, X, ChevronDown
+  Bold, Italic, Heading2, Heading3, Quote, List, ListOrdered, Camera, X, ChevronDown,
+  LayoutDashboard, FileText, Plus, User, ShieldAlert, Home,
+  PenLine
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -24,12 +26,12 @@ import { useGetPostBySlugQuery } from "@/hooks/queries/usePostQueries";
 import { useGetCategoriesQuery, useGetTagsQuery } from "@/hooks/queries/useCategoryQueries";
 import { useAuthStore } from "@/store/useAuthStore";
 
-// Fluid easing curve
-const fluidEase = [0.16, 1, 0.3, 1];
+// Fluid easing curve for snappy, premium animations
+const fluidEase = [0.25, 0.1, 0.25, 1];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: fluidEase } }
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: fluidEase } }
 };
 
 // ==========================================
@@ -55,7 +57,7 @@ const TipTapEditor = ({ content, onChange }) => {
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-zinc prose-lg max-w-none focus:outline-none min-h-[60vh] text-zinc-800 leading-relaxed prose-headings:font-medium prose-p:font-light prose-a:text-zinc-900',
+        class: 'prose prose-zinc prose-lg max-w-none focus:outline-none min-h-[60vh] text-zinc-800 leading-relaxed prose-headings:font-semibold prose-headings:tracking-tight prose-p:font-normal prose-a:text-black',
       },
     },
   });
@@ -72,10 +74,10 @@ const TipTapEditor = ({ content, onChange }) => {
     <button 
       type="button" 
       onClick={onClick} 
-      className={`p-2 rounded-xl transition-all outline-none flex items-center justify-center ${
+      className={`p-2 rounded-md transition-all outline-none flex items-center justify-center ${
         isActive 
-          ? 'bg-zinc-900 text-white shadow-md shadow-zinc-900/10' 
-          : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
+          ? 'bg-black text-white shadow-sm' 
+          : 'text-zinc-500 hover:bg-zinc-100 hover:text-black'
       }`}
     >
       {children}
@@ -84,17 +86,17 @@ const TipTapEditor = ({ content, onChange }) => {
 
   return (
     <div className="w-full flex flex-col relative group">
-      {/* Soft Floating Toolbar */}
-      <div className="sticky top-[100px] z-20 flex items-center gap-1 p-1.5 bg-white/80 backdrop-blur-md border border-zinc-200 rounded-2xl w-max mb-8 shadow-sm opacity-50 focus-within:opacity-100 hover:opacity-100 transition-opacity duration-300">
-        <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')}><Bold className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')}><Italic className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
-        <div className="w-px h-6 bg-zinc-200 mx-1" />
-        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })}><Heading2 className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} isActive={editor.isActive('heading', { level: 3 })}><Heading3 className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
-        <div className="w-px h-6 bg-zinc-200 mx-1" />
-        <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')}><Quote className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')}><List className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')}><ListOrdered className="w-4 h-4" strokeWidth={2} /></ToolbarButton>
+      {/* Sleek Floating Toolbar */}
+      <div className="sticky top-[90px] z-20 flex items-center gap-1 p-1.5 bg-white/90 backdrop-blur-md border border-zinc-200/80 rounded-lg w-max mb-6 shadow-sm opacity-60 focus-within:opacity-100 hover:opacity-100 transition-opacity duration-200">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')}><Bold className="w-4 h-4" strokeWidth={2.5} /></ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')}><Italic className="w-4 h-4" strokeWidth={2.5} /></ToolbarButton>
+        <div className="w-px h-5 bg-zinc-200 mx-1.5" />
+        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })}><Heading2 className="w-4 h-4" strokeWidth={2.5} /></ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} isActive={editor.isActive('heading', { level: 3 })}><Heading3 className="w-4 h-4" strokeWidth={2.5} /></ToolbarButton>
+        <div className="w-px h-5 bg-zinc-200 mx-1.5" />
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')}><Quote className="w-4 h-4" strokeWidth={2.5} /></ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')}><List className="w-4 h-4" strokeWidth={2.5} /></ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')}><ListOrdered className="w-4 h-4" strokeWidth={2.5} /></ToolbarButton>
       </div>
       
       {/* Editor Canvas */}
@@ -111,8 +113,8 @@ const TipTapEditor = ({ content, onChange }) => {
 export default function EditorPage() {
   return (
     <Suspense fallback={
-      <div className="h-[100dvh] bg-white flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
+      <div className="h-screen bg-[#fafafa] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-black" />
       </div>
     }>
       <EditorFormContent />
@@ -168,10 +170,9 @@ function EditorFormContent() {
       setCoverImageBase64(existingPost.coverImage || null);
       if (existingPost.tags) setSelectedTags(existingPost.tags.map(t => t.id));
       
-      // Ownership Guard
       if (existingPost.authorId !== user?.id && user?.role !== 'ADMIN' && user?.role !== 'AUTHOR') {
         toast.error("Permission denied.");
-        router.push("/writer/dashboard");
+        router.push("/editor/dashboard");
       }
     }
   }, [existingPost, reset, user, router]);
@@ -201,21 +202,20 @@ function EditorFormContent() {
 
   const onSubmit = (status) => (data) => {
     const payload = { ...data, status: status, coverImage: coverImageBase64, tags: selectedTags };
-    
     if (!payload.categoryId) payload.categoryId = null;
 
     if (existingPost) {
       updatePost({ id: existingPost.id, payload }, {
         onSuccess: () => {
           toast.success("Post updated successfully.");
-          router.push('/writer/dashboard');
+          router.push('/editor/dashboard');
         }
       });
     } else {
       createPost(payload, {
         onSuccess: () => {
           toast.success(`Post ${status === "PUBLISHED" ? "published" : "saved"} successfully.`);
-          router.push('/writer/dashboard');
+          router.push('/editor/dashboard');
         }
       });
     }
@@ -226,218 +226,238 @@ function EditorFormContent() {
 
   if (!isInitialized || (editSlug && postLoading)) {
     return (
-      <div className="h-[100dvh] bg-white flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
+      <div className="h-screen bg-[#fafafa] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-black" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 relative pt-3 pb-24">
+    <div className="min-h-screen bg-[#fafafa] flex flex-col md:flex-row font-sans text-zinc-900">
       
       {/* ======================================= */}
-      {/* MAIN WORKSPACE GRID                       */}
+      {/* DESKTOP SIDEBAR                         */}
       {/* ======================================= */}
-      <div className="relative z-10 max-w-[1300px] mx-auto px-6 py-4 md:py-8">
-        
-        {/* Top Minimal Info Bar */}
-        <motion.div 
-          initial="hidden" animate="visible" variants={fadeUp}
-          className="flex items-center justify-between pb-6 mb-12"
-        >
-          <Link 
-            href="/writer/dashboard" 
-            className="group flex items-center gap-2 text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-colors duration-300 outline-none bg-zinc-50 hover:bg-zinc-100 px-4 py-2 rounded-full"
-          >
-            <ArrowLeft className="w-4 h-4 opacity-70 group-hover:-translate-x-0.5 transition-all duration-300" strokeWidth={2} />
-            Back to Dashboard
+      <aside className="hidden md:flex flex-col w-[280px] lg:w-[320px] fixed inset-y-0 left-0 bg-white border-r border-zinc-200/50 p-6 overflow-y-auto z-30">
+        <div className="mb-10">
+          <Link href="/" className="inline-block outline-none">
+            <h2 className="text-[24px] font-black tracking-tighter text-black hover:opacity-70 transition-opacity">
+              Eklak.
+            </h2>
           </Link>
-          <span className="text-[12px] font-medium text-zinc-400 bg-zinc-50 px-3 py-1 rounded-full">
-            {existingPost ? "Editing Post" : "New Draft"}
-          </span>
-        </motion.div>
+          <p className="text-[13px] text-zinc-400 font-medium mt-1">Writer Workspace</p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
-          
-          {/* ======================================= */}
-          {/* LEFT: THE WRITING CANVAS                  */}
-          {/* ======================================= */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: fluidEase }}
-            className="lg:col-span-8 flex flex-col"
-          >
-            {/* Soft Title Input */}
-            <div className="mb-8">
-              <input 
-                type="text" 
-                placeholder="Story Title..."
-                {...register("title")}
-                className="w-full text-4xl md:text-5xl lg:text-6xl font-medium bg-transparent border-none outline-none text-zinc-900 placeholder-zinc-300 tracking-tight leading-[1.1] py-2"
-              />
-              <AnimatePresence>
-                {errors.title && (
-                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-sm mt-2 font-medium">
-                    {errors.title.message}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </div>
+        <nav className="flex flex-col gap-1.5 mb-10">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-3 px-3">Navigation</p>
+          <Link href="/editor/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-zinc-500 hover:text-black hover:bg-zinc-50 border border-transparent transition-all outline-none">
+            <LayoutDashboard className="w-4 h-4" /> My Posts
+          </Link>
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold bg-zinc-100/80 text-black shadow-sm border border-zinc-200/50 outline-none">
+            <PenLine className="w-4 h-4" /> {existingPost ? "Edit Post" : "New Post"}
+          </div>
+        </nav>
+      </aside>
 
-            {/* TipTap Rich Text Editor */}
-            <div className="flex-1 w-full relative">
-              <Controller
-                name="content" control={control}
-                render={({ field }) => (
-                  <TipTapEditor content={field.value} onChange={field.onChange} />
-                )}
-              />
-              <AnimatePresence>
-                {errors.content && (
-                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-sm mt-4 font-medium">
-                    {errors.content.message}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
+      {/* ======================================= */}
+      {/* MAIN CONTENT AREA                       */}
+      {/* ======================================= */}
+      <div className="flex-1 md:ml-[280px] lg:ml-[320px] flex flex-col w-full min-h-screen">
+        
+        {/* Top Navbar */}
+        <header className="flex h-[72px] bg-white/80 backdrop-blur-md border-b border-zinc-200/50 items-center justify-between px-6 lg:px-12 sticky top-0 z-20">
+          <div className="flex items-center gap-3 text-[14px] font-semibold tracking-tight">
+            <Link href="/editor/dashboard" className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-zinc-100 text-zinc-400 hover:text-black transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <span className="text-zinc-400">Workspace</span>
+            <span className="text-zinc-300">/</span>
+            <span className="text-black">{existingPost ? "Editing Post" : "Drafting"}</span>
+          </div>
 
-          {/* ======================================= */}
-          {/* RIGHT: THE META SETTINGS PANEL            */}
-          {/* ======================================= */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: fluidEase, delay: 0.1 }}
-            className="lg:col-span-4"
-          >
-            <div className="space-y-8 sticky top-[100px]">
-              
-              <h3 className="text-sm font-semibold text-zinc-900 mb-6">
-                Post Settings
-              </h3>
+          <div className="hidden sm:flex flex-items gap-3 text-right">
+             <p className="text-[13px] font-bold text-black">{user?.name || "Eklak"}</p>
+             <div className="w-8 h-8 rounded-md bg-zinc-100 border border-zinc-200/80 flex items-center justify-center text-zinc-500 overflow-hidden shrink-0">
+               {user?.profileImage ? <img src={user.profileImage} alt="Profile" className="w-full h-full object-cover" /> : <User className="w-4 h-4" />}
+             </div>
+          </div>
+        </header>
 
-              {/* 1. Cover Image Upload */}
-              <div>
-                <label className="text-xs font-medium text-zinc-500 mb-3 block">Cover Image</label>
-                <div 
-                  {...getRootProps()} 
-                  className={`relative border-2 rounded-[24px] text-center cursor-pointer transition-all duration-300 overflow-hidden group ${
-                    isDragActive ? 'border-zinc-400 bg-zinc-100' : 'border-dashed border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100/50'
-                  } ${coverImageBase64 ? 'border-solid border-transparent p-0 aspect-video' : 'p-10 aspect-video flex items-center justify-center'}`}
-                >
-                  <input {...getInputProps()} />
-                  {coverImageBase64 ? (
-                    <div className="w-full h-full relative">
-                      <img src={coverImageBase64} alt="Preview" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-white/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
-                        <span className="text-xs font-semibold text-zinc-900 flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
-                          <Camera className="w-4 h-4" /> Change Image
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setCoverImageBase64(null); }}
-                          className="text-xs font-medium text-red-600 hover:bg-red-50 px-4 py-2 rounded-full transition-colors flex items-center gap-1.5 outline-none"
-                        >
-                          <X className="w-3.5 h-3.5" /> Remove
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-zinc-400 group-hover:text-zinc-600 transition-colors">
-                      <ImagePlus className="w-6 h-6 mb-3" strokeWidth={1.5} />
-                      <p className="text-sm font-medium mb-1">Click or drag image</p>
-                      <p className="text-[11px] font-medium opacity-60">PNG, JPG, WEBP (Max 10MB)</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 2. Excerpt */}
-              <div>
-                <label className="text-xs font-medium text-zinc-500 mb-3 block">Short Excerpt</label>
-                <textarea 
-                  {...register("excerpt")} rows="3"
-                  className="w-full bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200 rounded-[20px] px-5 py-4 text-sm text-zinc-900 outline-none focus:bg-white focus:border-zinc-400 focus:ring-[4px] focus:ring-zinc-100 transition-all duration-300 resize-none placeholder-zinc-400"
-                  placeholder="A brief summary for the blog feed..."
+        {/* ======================================= */}
+        {/* EDITOR WORKSPACE GRID                   */}
+        {/* ======================================= */}
+        <main className="relative z-10 w-full max-w-[1400px] mx-auto px-6 py-8 lg:py-12 flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+            
+            {/* LEFT: THE WRITING CANVAS */}
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: fluidEase }}
+              className="lg:col-span-8 flex flex-col"
+            >
+              {/* Brutalist Title Input */}
+              <div className="mb-6">
+                <input 
+                  type="text" 
+                  placeholder="Post Title..."
+                  {...register("title")}
+                  className="w-full text-3xl md:text-4xl lg:text-5xl font-bold bg-transparent border-none outline-none text-black placeholder-zinc-300 tracking-tighter leading-[1.1] py-2"
                 />
                 <AnimatePresence>
-                  {errors.excerpt && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-xs mt-2 font-medium">{errors.excerpt.message}</motion.p>}
+                  {errors.title && (
+                    <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-sm mt-2 font-medium">
+                      {errors.title.message}
+                    </motion.p>
+                  )}
                 </AnimatePresence>
               </div>
 
-              {/* 3. Category */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-medium text-zinc-500 block">Category</label>
-                  {catsLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-400" />}
-                </div>
-                <div className="relative">
-                  <select 
-                    {...register("categoryId")}
-                    className="w-full appearance-none bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200 rounded-[20px] px-5 py-4 text-sm text-zinc-900 outline-none focus:bg-white focus:border-zinc-400 focus:ring-[4px] focus:ring-zinc-100 transition-all duration-300 cursor-pointer"
+              {/* TipTap Rich Text Editor */}
+              <div className="flex-1 w-full relative">
+                <Controller
+                  name="content" control={control}
+                  render={({ field }) => (
+                    <TipTapEditor content={field.value} onChange={field.onChange} />
+                  )}
+                />
+                <AnimatePresence>
+                  {errors.content && (
+                    <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-500 text-sm mt-4 font-medium">
+                      {errors.content.message}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+
+            {/* RIGHT: THE META SETTINGS PANEL */}
+            <motion.div 
+              initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: fluidEase, delay: 0.1 }}
+              className="lg:col-span-4"
+            >
+              <div className="space-y-8 sticky top-[100px] bg-white border border-zinc-200/60 p-6 rounded-xl shadow-sm">
+                
+                <h3 className="text-[14px] font-bold tracking-wide uppercase text-black border-b border-zinc-100 pb-4">
+                  Settings
+                </h3>
+
+                {/* 1. Cover Image Upload */}
+                <div>
+                  <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-3 block">Cover Image</label>
+                  <div 
+                    {...getRootProps()} 
+                    className={`relative border rounded-lg text-center cursor-pointer transition-all duration-300 overflow-hidden group ${
+                      isDragActive ? 'border-zinc-400 bg-zinc-50' : 'border-dashed border-zinc-300 hover:border-zinc-400 bg-zinc-50/50 hover:bg-zinc-50'
+                    } ${coverImageBase64 ? 'border-solid border-transparent p-0 aspect-video' : 'p-8 aspect-video flex items-center justify-center'}`}
                   >
-                    <option value="">Select a category...</option>
-                    {categories?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                  </select>
-                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+                    <input {...getInputProps()} />
+                    {coverImageBase64 ? (
+                      <div className="w-full h-full relative">
+                        <img src={coverImageBase64} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
+                          <span className="text-[12px] font-bold text-black flex items-center gap-2 bg-white px-4 py-2 rounded-md shadow-sm">
+                            <Camera className="w-4 h-4" /> Change
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setCoverImageBase64(null); }}
+                            className="text-[12px] font-bold text-white hover:text-red-400 transition-colors flex items-center gap-1.5 outline-none"
+                          >
+                            <X className="w-3.5 h-3.5" /> Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-zinc-400 group-hover:text-zinc-600 transition-colors">
+                        <ImagePlus className="w-6 h-6 mb-3" strokeWidth={1.5} />
+                        <p className="text-[13px] font-semibold mb-1">Upload Thumbnail</p>
+                        <p className="text-[11px] font-medium opacity-70">Max 10MB</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* 4. Tags */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-medium text-zinc-500 block">Tags</label>
-                  {tagsLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-400" />}
+                {/* 2. Excerpt */}
+                <div>
+                  <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-3 block">Excerpt</label>
+                  <textarea 
+                    {...register("excerpt")} rows="3"
+                    className="w-full bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] text-black outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 resize-none placeholder-zinc-400"
+                    placeholder="Brief summary..."
+                  />
+                  <AnimatePresence>
+                    {errors.excerpt && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-[12px] mt-1.5 font-semibold">{errors.excerpt.message}</motion.p>}
+                  </AnimatePresence>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {tags?.map(tag => {
-                    const isSelected = selectedTags.includes(tag.id);
-                    return (
-                      <button
-                        key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
-                        className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer outline-none ${
-                          isSelected 
-                            ? 'bg-zinc-900 text-white shadow-md shadow-zinc-900/10' 
-                            : 'bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200/60'
-                        }`}
-                      >
-                        {tag.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
 
-              {/* ======================================= */}
-              {/* PUBLISHING ACTIONS                        */}
-              {/* ======================================= */}
-              <div className="pt-6 mt-6 border-t border-zinc-100">
-                <div className="flex flex-col gap-3">
-                  
+                {/* 3. Category */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest block">Category</label>
+                    {catsLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-400" />}
+                  </div>
+                  <div className="relative">
+                    <select 
+                      {...register("categoryId")}
+                      className="w-full appearance-none bg-zinc-50 hover:bg-zinc-100/50 border border-zinc-200/80 rounded-lg px-4 py-3 text-[14px] font-medium text-black outline-none focus:bg-white focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 cursor-pointer"
+                    >
+                      <option value="">Select category...</option>
+                      {categories?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* 4. Tags */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest block">Tags</label>
+                    {tagsLoading && <Loader2 className="w-3 h-3 animate-spin text-zinc-400" />}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {tags?.map(tag => {
+                      const isSelected = selectedTags.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
+                          className={`px-3 py-1.5 rounded-md text-[12px] font-bold tracking-wide transition-all duration-200 cursor-pointer outline-none border ${
+                            isSelected 
+                              ? 'bg-black text-white border-black shadow-sm' 
+                              : 'bg-white text-zinc-500 hover:text-black border-zinc-200 hover:border-zinc-300'
+                          }`}
+                        >
+                          {tag.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* PUBLISHING ACTIONS */}
+                <div className="pt-6 mt-6 border-t border-zinc-100 flex flex-col gap-3">
                   <button 
                     onClick={handleSubmit(onSubmit("PUBLISHED"))}
                     disabled={isPending || user?.role === 'WRITER'}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-900 text-white rounded-full text-[14px] font-semibold hover:bg-zinc-800 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none shadow-lg shadow-zinc-900/15"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white rounded-lg text-[13px] font-bold active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none shadow-sm"
                     title={user?.role === 'WRITER' ? "Writers can only save drafts." : ""}
                   >
                     {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    {user?.role === 'WRITER' ? 'Publishing Restricted' : 'Publish Post'}
+                    {user?.role === 'WRITER' ? 'Restricted' : 'Publish Post'}
                   </button>
                   
                   <button 
                     onClick={handleSubmit(onSubmit("DRAFT"))}
                     disabled={isPending}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-50 text-zinc-900 hover:bg-zinc-100 rounded-full text-[14px] font-medium active:scale-[0.98] transition-all disabled:opacity-50 outline-none"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-white border border-zinc-200 text-zinc-600 hover:text-black hover:border-zinc-300 hover:bg-zinc-50 rounded-lg text-[13px] font-bold active:scale-[0.98] transition-all disabled:opacity-50 outline-none"
                   >
-                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-zinc-500" />}
-                    Save as Draft
+                    {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save Draft
                   </button>
-
                 </div>
+
               </div>
-
-            </div>
-          </motion.div>
-
-        </div>
+            </motion.div>
+          </div>
+        </main>
       </div>
     </div>
   );
